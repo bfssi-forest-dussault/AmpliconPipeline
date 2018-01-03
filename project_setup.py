@@ -5,7 +5,6 @@ import logging
 import subprocess
 import qiime2pipeline
 
-logging.basicConfig(level=logging.DEBUG)
 
 
 def retrieve_fastqgz(directory):
@@ -163,15 +162,21 @@ def create_sampledata_artifact(datadir, qiimedir):
 
 
 @click.command()
-@click.option('--inputdir', help='Directory containing your raw MiSeq output (i.e. *.fastq.gz files)')
-@click.option('--outdir', help='Base directory for all output from AmpliconPipeline')
-@click.option('--metadata', help='Path to QIIME2 tab-separated metadata file')
-@click.option('--classifier', help='Path to QIIME2 Classifier Artifact')
-def main(inputdir=None, outdir=None, metadata=None, classifier=None):
+@click.option('--inputdir', default=None, help='Directory containing your raw MiSeq output (i.e. *.fastq.gz files)')
+@click.option('--outdir', default=None, help='Base directory for all output from AmpliconPipeline')
+@click.option('--metadata', default=None, help='Path to QIIME2 tab-separated metadata file')
+@click.option('--classifier', default=None, help='Path to QIIME2 Classifier Artifact')
+@click.option('--verbose', is_flag=True, help='Set flag to enable more verbose output')
+def main(inputdir, outdir, metadata, classifier, verbose):
+    # Logging setup
+    if verbose:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.INFO)
 
     # Input validation
-    if inputdir is None or outdir is None:
-        logging.error('Please provide an input directory and working directory')
+    if inputdir is None or outdir is None or metadata is None or classifier is None:
+        logging.error('Please provide inputdir, outdir, metadata, and classifier paths')
         quit()
 
     if os.path.isdir(outdir):
@@ -182,7 +187,7 @@ def main(inputdir=None, outdir=None, metadata=None, classifier=None):
     os.mkdir(outdir)
     os.mkdir(os.path.join(outdir, 'data'))
     os.mkdir(os.path.join(outdir, 'qiime2'))
-    logging.debug('Created folder structure.')
+    logging.debug('Created folder structure')
 
     # Prepare dictionary containing R1 and R2 for each sample ID
     sample_dictionary = get_sample_dictionary(inputdir)
@@ -202,12 +207,12 @@ def main(inputdir=None, outdir=None, metadata=None, classifier=None):
                                                     qiimedir=os.path.join(outdir, 'qiime2'))
 
     # Run the full pipeline
-    logging.info('Starting QIIME2 pipeline with output routing to {}\n'.format(outdir))
+    logging.info('Starting QIIME2 Pipeline with output routing to {}'.format(outdir))
     qiime2pipeline.run_pipeline(base_dir=os.path.join(outdir, 'qiime2'),
                                 data_artifact_path=data_artifact_path,
                                 sample_metadata_path=metadata,
                                 classifier_artifact_path=classifier)
-    logging.info('\nQIIME2 pipeline completed')
+    logging.info('\nQIIME2 Pipeline Completed')
 
 
 if __name__ == '__main__':
