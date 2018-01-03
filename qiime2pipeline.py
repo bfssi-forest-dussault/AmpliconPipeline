@@ -194,6 +194,8 @@ def visualize_taxonomy(base_dir, metadata_object, taxonomy_analysis, dada2_filte
 
 
 def run_diversity_metrics(base_dir, dada2_filtered_table, phylo_rooted_tree, metadata_object, sampling_depth=15000):
+    logging.info('Attempting to calculate diversity metrics')
+
     # Path setup
     bray_curtis_path = os.path.join(base_dir, 'bray_curtis_emperor.qzv')
     jaccard_emperor_path = os.path.join(base_dir, 'jaccard_emperor.qzv')
@@ -229,11 +231,14 @@ def run_diversity_metrics(base_dir, dada2_filtered_table, phylo_rooted_tree, met
     alpha_group_evenness.visualization.save(evenness_visualization_path)
 
     # Beta group significance
-    beta_group = diversity.visualizers.beta_group_significance(
-        distance_matrix=diversity_metrics.unweighted_unifrac_distance_matrix,
-        metadata=metadata_object.get_category('#SampleID'),
-        pairwise=True)
-    beta_group.visualization.save(beta_visualization_path)
+    try:
+        beta_group = diversity.visualizers.beta_group_significance(
+            distance_matrix=diversity_metrics.unweighted_unifrac_distance_matrix,
+            metadata=metadata_object.get_category('Sample_Type'),
+            pairwise=True)
+        beta_group.visualization.save(beta_visualization_path)
+    except:
+        logging.info('Could not calculate beta group significance with metadata feature Sample_Type\n')
 
     return diversity_metrics
 
@@ -314,6 +319,7 @@ def run_pipeline(base_dir, data_artifact_path, sample_metadata_path, classifier_
                                            dada2_filtered_table=dada2_filtered_table)
 
     # Alpha and beta diversity
+    # TODO: requires metadata object with some sort of sample information (sample type). Need to handle this gracefully.
     diversity_metrics = run_diversity_metrics(base_dir=base_dir,
                                               dada2_filtered_table=dada2_filtered_table,
                                               phylo_rooted_tree=phylo_rooted_tree,
