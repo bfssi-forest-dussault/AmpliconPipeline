@@ -1,10 +1,7 @@
 import os
 import glob
-import click
 import logging
 import subprocess
-import qiime2pipeline
-
 
 
 def retrieve_fastqgz(directory):
@@ -117,6 +114,7 @@ def append_dummy_barcodes(path):
     """
     for file in retrieve_fastqgz(path):
         if valid_olc_id(file):
+            # TODO: Make this renaming more robust with some regex
             os.rename(os.path.abspath(file), os.path.abspath(file).replace('_S', '_00_S'))
     logging.info('Renamed all valid OLC *.fastq.gz files in {}'.format(path))
 
@@ -155,65 +153,6 @@ def create_sampledata_artifact(datadir, qiimedir):
 
     logging.debug('STDOUT:{}'.format(out))
     logging.debug('STDERR:{}'.format(err))
-    logging.info('Successfully created QIIME 2 data Artifact.')
+    logging.info('Successfully created QIIME 2 data Artifact')
 
     return os.path.join(qiimedir,'paired-sample-data.qza')
-
-
-
-@click.command()
-@click.option('--inputdir', default=None, help='Directory containing your raw MiSeq output (i.e. *.fastq.gz files)')
-@click.option('--outdir', default=None, help='Base directory for all output from AmpliconPipeline')
-@click.option('--metadata', default=None, help='Path to QIIME2 tab-separated metadata file')
-@click.option('--classifier', default=None, help='Path to QIIME2 Classifier Artifact')
-@click.option('--verbose', is_flag=True, help='Set flag to enable more verbose output')
-def main(inputdir, outdir, metadata, classifier, verbose):
-    # Logging setup
-    if verbose:
-        logging.basicConfig(level=logging.DEBUG)
-    else:
-        logging.basicConfig(level=logging.INFO)
-
-    # Input validation
-    if inputdir is None or outdir is None or metadata is None or classifier is None:
-        logging.error('Please provide inputdir, outdir, metadata, and classifier paths')
-        quit()
-
-    if os.path.isdir(outdir):
-        logging.error('Output directory already exists. Please provide a new name for your desired output directory')
-        quit()
-
-    # Create folder structure
-    os.mkdir(outdir)
-    os.mkdir(os.path.join(outdir, 'data'))
-    os.mkdir(os.path.join(outdir, 'qiime2'))
-    logging.debug('Created folder structure')
-
-    # Prepare dictionary containing R1 and R2 for each sample ID
-    sample_dictionary = get_sample_dictionary(inputdir)
-    logging.debug('Populated sample dictionary successfully')
-
-    # Create symlinks in data folder
-    symlink_dictionary(sample_dictionary=sample_dictionary,
-                       destination_folder=os.path.join(outdir, 'data'))
-    logging.debug('Creating symlinks within the following folder: {}'.format(os.path.join(outdir, 'data')))
-
-    # Fix symlink filenames for Qiime 2
-    append_dummy_barcodes(os.path.join(outdir, 'data'))
-    logging.debug('Appended dummy barcodes successfully')
-
-    # Call Qiime 2 to create artifact
-    data_artifact_path = create_sampledata_artifact(datadir=os.path.join(outdir, 'data'),
-                                                    qiimedir=os.path.join(outdir, 'qiime2'))
-
-    # Run the full pipeline
-    logging.info('Starting QIIME2 Pipeline with output routing to {}'.format(outdir))
-    qiime2pipeline.run_pipeline(base_dir=os.path.join(outdir, 'qiime2'),
-                                data_artifact_path=data_artifact_path,
-                                sample_metadata_path=metadata,
-                                classifier_artifact_path=classifier)
-    logging.info('\nQIIME2 Pipeline Completed')
-
-
-if __name__ == '__main__':
-    main()
