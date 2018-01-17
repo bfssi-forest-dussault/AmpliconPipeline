@@ -130,14 +130,13 @@ def export_newick(base_dir, tree):
     # Export data
     tree.rooted_tree.export_data(export_path)
     logging.info('Exported tree file in newick format from the follwing artifact: {}'.format(tree))
-
     return export_path
 
 
 def load_classifier_artifact(classifier_artifact_path):
     # Load existing artifact
     naive_bayes_classifier = qiime2.Artifact.load(classifier_artifact_path)
-
+    logging.info('Loaded classifier from {}'.format(classifier_artifact_path))
     return naive_bayes_classifier
 
 
@@ -151,6 +150,7 @@ def alpha_rarefaction_visualization(base_dir, dada2_filtered_table, max_depth=50
 
     # Save
     alpha_rarefaction_viz.visualization.save(alpha_rarefaction_export_path)
+    logging.info('Saved {} successfully'.format(alpha_rarefaction_export_path))
 
     return alpha_rarefaction_viz
 
@@ -214,9 +214,16 @@ def run_diversity_metrics(base_dir, dada2_filtered_table, phylo_rooted_tree, met
 
     # Save
     diversity_metrics.bray_curtis_emperor.save(bray_curtis_path)
+    logging.info('Saved {} successfully'.format(bray_curtis_path))
+
     diversity_metrics.jaccard_emperor.save(jaccard_emperor_path)
+    logging.info('Saved {} successfully'.format(jaccard_emperor_path))
+
     diversity_metrics.unweighted_unifrac_emperor.save(unweighted_unifrac_emperor_path)
+    logging.info('Saved {} successfully'.format(unweighted_unifrac_emperor_path))
+
     diversity_metrics.weighted_unifrac_emperor.save(weighted_unifrac_emperor_path)
+    logging.info('Saved {} successfully'.format(weighted_unifrac_emperor_path))
 
     # Alpha group significance
     alpha_group_faith = diversity.visualizers.alpha_group_significance(alpha_diversity=diversity_metrics.faith_pd_vector,
@@ -228,7 +235,10 @@ def run_diversity_metrics(base_dir, dada2_filtered_table, phylo_rooted_tree, met
 
     # Save
     alpha_group_faith.visualization.save(faith_visualization_path)
+    logging.info('Saved {} successfully'.format(faith_visualization_path))
     alpha_group_evenness.visualization.save(evenness_visualization_path)
+    logging.info('Saved {} successfully'.format(evenness_visualization_path))
+
 
     # Beta group significance
     try:
@@ -283,7 +293,11 @@ def run_pipeline(base_dir, data_artifact_path, sample_metadata_path, classifier_
 
     # Filter & denoise w/dada2
     (dada2_filtered_table, dada2_filtered_rep_seqs) = dada2_qc(base_dir=base_dir,
-                                                               demultiplexed_seqs=data_artifact)
+                                                               demultiplexed_seqs=data_artifact,
+                                                               trim_left_f=27,
+                                                               trim_left_r=10,
+                                                               trunc_len_f=275,
+                                                               trunc_len_r=200)
     # Visualize dada2
     feature_table_summary = visualize_dada2(base_dir=base_dir,
                                             dada2_filtered_table=dada2_filtered_table,

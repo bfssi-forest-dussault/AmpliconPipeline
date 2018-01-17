@@ -1,6 +1,5 @@
  #!/usr/bin/env python3
 
-
 import logging
 import os
 import click
@@ -17,9 +16,15 @@ from bin import qiime2_pipeline
 def cli(inputdir, outdir, metadata, classifier, verbose):
     # Logging setup
     if verbose:
-        logging.basicConfig(level=logging.DEBUG)
+        logging.basicConfig(
+            format='\033[92m \033[1m %(asctime)s \033[0m %(message)s ',
+            level=logging.DEBUG,
+            datefmt='%Y-%m-%d %H:%M:%S')
     else:
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(
+            format='\033[92m \033[1m %(asctime)s \033[0m %(message)s ',
+            level=logging.INFO,
+            datefmt='%Y-%m-%d %H:%M:%S')
 
     # Input validation
     if inputdir is None or outdir is None or metadata is None or classifier is None:
@@ -51,6 +56,7 @@ def cli(inputdir, outdir, metadata, classifier, verbose):
     logging.debug('Appended dummy barcodes successfully')
 
     # Call Qiime 2 to create artifact
+    logging.info('Creating sample data artifact for QIIME 2')
     data_artifact_path = helper_functions.create_sampledata_artifact(datadir=os.path.join(outdir, 'data'),
                                                                      qiimedir=os.path.join(outdir, 'qiime2'))
 
