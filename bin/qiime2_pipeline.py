@@ -50,6 +50,7 @@ def dada2_qc(base_dir, demultiplexed_seqs, trim_left_f=10, trim_left_r=10, trunc
     # Grab all CPUs if parameter is not specified
     if cpu_count is None:
         cpu_count = multiprocessing.cpu_count()
+        logging.info('Set CPU count to {}'.format(cpu_count))
 
     # Run dada2
     (dada2_filtered_table, dada2_filtered_rep_seqs) = dada2.methods.denoise_paired(demultiplexed_seqs=demultiplexed_seqs,
@@ -87,6 +88,7 @@ def seq_alignment_mask(base_dir, dada2_filtered_rep_seqs, cpu_count=None):
     # CPU setup
     if cpu_count is None:
         cpu_count = multiprocessing.cpu_count()
+        logging.info('Set CPU count to {}'.format(cpu_count))
 
     # Path setup
     aligned_export_path = os.path.join(base_dir, 'aligned-rep-seqs.qza')
