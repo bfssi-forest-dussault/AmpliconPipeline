@@ -36,6 +36,7 @@ def visualize_metadata(base_dir, metadata_object):
 
     return metadata_viz
 
+
 def visualize_demux(base_dir, data_artifact):
     # Path setup
     export_path = os.path.join(base_dir, 'demux_summary.qzv')
@@ -47,20 +48,25 @@ def visualize_demux(base_dir, data_artifact):
 
     return demux_viz
 
-def dada2_qc(base_dir, demultiplexed_seqs, trim_left_f=10, trim_left_r=10, trunc_len_f=0, trunc_len_r=260, chimera_method='consensus', cpu_count=None):
+
+def dada2_qc(base_dir, demultiplexed_seqs, trim_left_f=10, trim_left_r=10, trunc_len_f=0, trunc_len_r=260,
+             chimera_method='consensus', cpu_count=None):
+    logging.info('Running dada2 for quality control of reads...')
+
     # Grab all CPUs if parameter is not specified
     if cpu_count is None:
         cpu_count = multiprocessing.cpu_count()
         logging.info('Set CPU count to {}'.format(cpu_count))
 
     # Run dada2
-    (dada2_filtered_table, dada2_filtered_rep_seqs) = dada2.methods.denoise_paired(demultiplexed_seqs=demultiplexed_seqs,
-                                                                                   trim_left_f=trim_left_f,
-                                                                                   trim_left_r=trim_left_r,
-                                                                                   trunc_len_f=trunc_len_f,
-                                                                                   trunc_len_r=trunc_len_r,
-                                                                                   chimera_method=chimera_method,
-                                                                                   n_threads=cpu_count)
+    (dada2_filtered_table, dada2_filtered_rep_seqs) = dada2.methods.denoise_paired(
+        demultiplexed_seqs=demultiplexed_seqs,
+        trim_left_f=trim_left_f,
+        trim_left_r=trim_left_r,
+        trunc_len_f=trunc_len_f,
+        trunc_len_r=trunc_len_r,
+        chimera_method=chimera_method,
+        n_threads=cpu_count)
 
     # Save artifacts
     dada2_filtered_table.save(os.path.join(base_dir, 'table-dada2.qza'))
@@ -84,6 +90,7 @@ def visualize_dada2(base_dir, dada2_filtered_table, dada2_filtered_rep_seqs, met
     logging.info('Saved dada2 visualizations successfully.')
 
     return feature_table_summary
+
 
 def seq_alignment_mask(base_dir, dada2_filtered_rep_seqs, cpu_count=None):
     # CPU setup
@@ -175,6 +182,7 @@ def alpha_rarefaction_visualization(base_dir, dada2_filtered_table, max_depth=No
 
     return alpha_rarefaction_viz
 
+
 def classify_taxonomy(base_dir, dada2_filtered_rep_seqs, classifier):
     # Path setup
     export_path = os.path.join(base_dir, 'taxonomy.qza')
@@ -217,6 +225,7 @@ def visualize_taxonomy(base_dir, metadata_object, taxonomy_analysis, dada2_filte
 def run_diversity_metrics(base_dir, dada2_filtered_table, phylo_rooted_tree, metadata_object, sampling_depth=None):
     logging.info('Attempting to calculate diversity metrics')
 
+    # Set sampling_depth to half of the maximum if no value is provided
     if sampling_depth is None:
         sampling_depth = calculate_maximum_depth(dada2_filtered_table) * 0.5
 
@@ -250,19 +259,19 @@ def run_diversity_metrics(base_dir, dada2_filtered_table, phylo_rooted_tree, met
     logging.info('Saved {} successfully'.format(weighted_unifrac_emperor_path))
 
     # Alpha group significance
-    alpha_group_faith = diversity.visualizers.alpha_group_significance(alpha_diversity=diversity_metrics.faith_pd_vector,
-                                                                 metadata=metadata_object)
+    alpha_group_faith = diversity.visualizers.alpha_group_significance(
+        alpha_diversity=diversity_metrics.faith_pd_vector,
+        metadata=metadata_object)
 
-
-    alpha_group_evenness = diversity.visualizers.alpha_group_significance(alpha_diversity=diversity_metrics.evenness_vector,
-                                                                 metadata=metadata_object)
+    alpha_group_evenness = diversity.visualizers.alpha_group_significance(
+        alpha_diversity=diversity_metrics.evenness_vector,
+        metadata=metadata_object)
 
     # Save
     alpha_group_faith.visualization.save(faith_visualization_path)
     logging.info('Saved {} successfully'.format(faith_visualization_path))
     alpha_group_evenness.visualization.save(evenness_visualization_path)
     logging.info('Saved {} successfully'.format(evenness_visualization_path))
-
 
     # Beta group significance
     try:
@@ -278,7 +287,7 @@ def run_diversity_metrics(base_dir, dada2_filtered_table, phylo_rooted_tree, met
 
 
 # TODO: Implement this.
-def train_feature_classifier(base_dir, otu_filepath, reference_taxonomy_filepath, f_primer='CCTACGGGNGGCWGCAG', r_primer='GACTACHVGGGTATCTAATCC'):
+def train_feature_classifier(base_dir, otu_filepath, reference_taxonomy_filepath, f_primer=None, r_primer=None):
     """
     Trains a Naive Bayes classifier based on a reference database/taxonomy
     :param base_dir: Main working directory filepath
@@ -288,6 +297,9 @@ def train_feature_classifier(base_dir, otu_filepath, reference_taxonomy_filepath
     :param r_primer: String containing reverse primer sequence Default V3-V4 regions.
     :return: Returns the trained feature classifier
     """
+    if f_primer is None and r_primer is None:
+        f_primer = 'CCTACGGGNGGCWGCAG'  # V3-V4
+        r_primer = 'GACTACHVGGGTATCTAATCC'  # V3-V4
 
     # Path setup
     ref_seqs_filepath = os.path.join(base_dir, 'ref-seqs.qza')
@@ -302,6 +314,18 @@ def train_feature_classifier(base_dir, otu_filepath, reference_taxonomy_filepath
                                                                                    reference_taxonomy=ref_taxonomy)
 
     return naive_bayes_classifier
+
+
+def run_qc_pipeline(base_dir, data_artifact_path, sample_metadata_path):
+    # Load seed objects
+    data_artifact = load_data_artifact(data_artifact_path)
+    metadata_object = load_sample_metadata(sample_metadata_path)
+
+    # Visualize metadata
+    metadata_viz = visualize_metadata(base_dir=base_dir, metadata_object=metadata_object)
+
+    # Demux
+    demux_viz = visualize_demux(base_dir=base_dir, data_artifact=data_artifact)
 
 
 def run_pipeline(base_dir, data_artifact_path, sample_metadata_path, classifier_artifact_path):
