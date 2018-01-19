@@ -15,11 +15,18 @@ from bin import qiime2_pipeline
 @click.option('-o', '--outdir',
               type=click.Path(exists=False),
               required=True,
-              help='Base directory for all output from AmpliconPipeline. Note that this directory must not already exist.')
+              help='Base directory for all output from AmpliconPipeline. '
+                   'Note that this directory must not already exist')
 @click.option('-m', '--metadata',
               type=click.Path(exists=True),
               required=True,
               help='Path to QIIME2 tab-separated metadata file')
+@click.option('-eq','--evaluate_quality',
+              is_flag=True,
+              default=False,
+              help='Setting this flag will only run the pipeline up until generating the demux_summary.qzv file. '
+                   'This is important to do before running the pipeline to establish acceptable trimming/truncation '
+                   'parameters to pass to dada2.')
 @click.option('-c', '--classifier',
               type=click.Path(exists=True),
               required=False,
@@ -29,7 +36,7 @@ from bin import qiime2_pipeline
               default=False,
               help='Set flag to enable more verbose output')
 @click.pass_context
-def cli(ctx, inputdir, outdir, metadata, classifier, verbose):
+def cli(ctx, inputdir, outdir, metadata, classifier, evaluate_quality, verbose):
     # Logging setup
     if verbose:
         logging.basicConfig(
@@ -42,46 +49,31 @@ def cli(ctx, inputdir, outdir, metadata, classifier, verbose):
             level=logging.INFO,
             datefmt='%Y-%m-%d %H:%M:%S')
 
+    if evaluate_quality:
+        data_artifact_path = helper_functions.project_setup(outdir=outdir, inputdir=inputdir)
+        logging.info('Starting QIIME2-QC Pipeline with output routing to {}'.format(outdir))
+        qiime2_pipeline.run_qc_pipeline(base_dir=os.path.join(outdir, 'qiime2'),
+                                        data_artifact_path=data_artifact_path,
+                                        sample_metadata_path=metadata)
+        logging.info('\nQIIME2-QC Pipeline Completed')
+        ctx.quit()
+
+
     # Input validation
     if classifier is None:
-        click.echo(ctx.get_help(),
-                   err=True)
+        click.echo(ctx.get_help(), err=True)
         click.echo('\nERROR: Please provide a path to an existing classifier. '
-                   'Training is not yet implemented.',
-                   err=True)
+                   'Training is not yet implemented.', err=True)
         ctx.exit()
 
     if os.path.isdir(outdir):
-        click.echo(ctx.get_help(),
-                   err=True)
+        click.echo(ctx.get_help(), err=True)
         click.echo('\nERROR: Specified output directory already exists. '
-                      'Please provide a new path that does not already exist.',
-                   err=True)
+                      'Please provide a new path that does not already exist.', err=True)
         ctx.exit()
 
-    # Create folder structure
-    os.mkdir(outdir)
-    os.mkdir(os.path.join(outdir, 'data'))
-    os.mkdir(os.path.join(outdir, 'qiime2'))
-    logging.debug('Created QIIME 2 folder structure at {}'.format(outdir))
-
-    # Prepare dictionary containing R1 and R2 for each sample ID
-    sample_dictionary = helper_functions.get_sample_dictionary(inputdir)
-    logging.debug('Sample Dictionary:{}'.format(sample_dictionary))
-
-    # Create symlinks in data folder
-    helper_functions.symlink_dictionary(sample_dictionary=sample_dictionary,
-                                        destination_folder=os.path.join(outdir, 'data'))
-    logging.debug('Creating symlinks within the following folder: {}'.format(os.path.join(outdir, 'data')))
-
-    # Fix symlink filenames for Qiime 2
-    helper_functions.append_dummy_barcodes(os.path.join(outdir, 'data'))
-    logging.debug('Appended dummy barcodes successfully')
-
-    # Call Qiime 2 to create artifact
-    logging.info('Creating sample data artifact for QIIME 2')
-    data_artifact_path = helper_functions.create_sampledata_artifact(datadir=os.path.join(outdir, 'data'),
-                                                                     qiimedir=os.path.join(outdir, 'qiime2'))
+    # Project setup + get path to data artifact
+    data_artifact_path = helper_functions.project_setup(outdir=outdir, inputdir=inputdir)
 
     # Run the full pipeline
     logging.info('Starting QIIME2 Pipeline with output routing to {}'.format(outdir))
@@ -90,6 +82,7 @@ def cli(ctx, inputdir, outdir, metadata, classifier, verbose):
                                  sample_metadata_path=metadata,
                                  classifier_artifact_path=classifier)
     logging.info('\nQIIME2 Pipeline Completed')
+    ctx.exit()
 
 
 if __name__ == '__main__':
