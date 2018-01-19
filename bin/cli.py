@@ -8,12 +8,28 @@ from bin import qiime2_pipeline
 
 
 @click.command()
-@click.option('--inputdir', default=None, help='Directory containing your raw MiSeq output (i.e. *.fastq.gz files)')
-@click.option('--outdir', default=None, help='Base directory for all output from AmpliconPipeline')
-@click.option('--metadata', default=None, help='Path to QIIME2 tab-separated metadata file')
-@click.option('--classifier', default=None, help='Path to QIIME2 Classifier Artifact')
-@click.option('--verbose', is_flag=True, help='Set flag to enable more verbose output')
-def cli(inputdir, outdir, metadata, classifier, verbose):
+@click.option('-i', '--inputdir',
+              type=click.Path(exists=True),
+              required=True,
+              help='Directory containing your raw MiSeq output (i.e. *.fastq.gz files)')
+@click.option('-o', '--outdir',
+              type=click.Path(exists=False),
+              required=True,
+              help='Base directory for all output from AmpliconPipeline. Note that this directory must not already exist.')
+@click.option('-m', '--metadata',
+              type=click.Path(exists=True),
+              required=True,
+              help='Path to QIIME2 tab-separated metadata file')
+@click.option('-c', '--classifier',
+              type=click.Path(exists=True),
+              required=False,
+              help='Path to QIIME2 Classifier Artifact')
+@click.option('-v', '--verbose',
+              is_flag=True,
+              default=False,
+              help='Set flag to enable more verbose output')
+@click.pass_context
+def cli(ctx, inputdir, outdir, metadata, classifier, verbose):
     # Logging setup
     if verbose:
         logging.basicConfig(
@@ -27,20 +43,27 @@ def cli(inputdir, outdir, metadata, classifier, verbose):
             datefmt='%Y-%m-%d %H:%M:%S')
 
     # Input validation
-    if inputdir is None or outdir is None or metadata is None or classifier is None:
-        logging.error('Please provide inputdir, outdir, metadata, and classifier paths')
-        quit()
+    if classifier is None:
+        click.echo(ctx.get_help(),
+                   err=True)
+        click.echo('\nERROR: Please provide a path to an existing classifier. '
+                   'Training is not yet implemented.',
+                   err=True)
+        ctx.exit()
 
     if os.path.isdir(outdir):
-        logging.error('Specified output directory already exists. '
-                      'Please provide a new name for your desired output directory')
-        quit()
+        click.echo(ctx.get_help(),
+                   err=True)
+        click.echo('\nERROR: Specified output directory already exists. '
+                      'Please provide a new path that does not already exist.',
+                   err=True)
+        ctx.exit()
 
     # Create folder structure
     os.mkdir(outdir)
     os.mkdir(os.path.join(outdir, 'data'))
     os.mkdir(os.path.join(outdir, 'qiime2'))
-    logging.debug('Created folder structure')
+    logging.debug('Created QIIME 2 folder structure at {}'.format(outdir))
 
     # Prepare dictionary containing R1 and R2 for each sample ID
     sample_dictionary = helper_functions.get_sample_dictionary(inputdir)
