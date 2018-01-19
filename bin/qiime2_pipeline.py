@@ -2,6 +2,7 @@ import os
 import logging
 import multiprocessing
 import qiime2
+import pandas as pd
 from qiime2.plugins import feature_table, \
     dada2, \
     demux, \
@@ -142,9 +143,27 @@ def load_classifier_artifact(classifier_artifact_path):
     return naive_bayes_classifier
 
 
-def alpha_rarefaction_visualization(base_dir, dada2_filtered_table, max_depth=50000):
+def calculate_maximum_depth(dada2_table):
+    # Read in dada2 table
+    df = dada2_table.view(pd.DataFrame)
+    df = df.transpose()
+    value_dict = {}
+
+    # Calculate the sum of each column (sample)
+    for column in df:
+        value_dict[column] = df[column].sum()
+
+    max_depth = max(value_dict.values())
+    return max_depth
+
+
+def alpha_rarefaction_visualization(base_dir, dada2_filtered_table, max_depth=None):
     # Path setup
     alpha_rarefaction_export_path = os.path.join(base_dir, 'alpha-rarefaction.qzv')
+
+    # Max depth calculation. This (arbitrarily) sets the maximum depth to 80% of the highest value found.
+    if max_depth is None:
+        max_depth = calculate_maximum_depth(dada2_filtered_table) * 0.8
 
     # Produce rarefaction curve
     alpha_rarefaction_viz = diversity.visualizers.alpha_rarefaction(table=dada2_filtered_table,
@@ -195,8 +214,11 @@ def visualize_taxonomy(base_dir, metadata_object, taxonomy_analysis, dada2_filte
     return taxonomy_metadata
 
 
-def run_diversity_metrics(base_dir, dada2_filtered_table, phylo_rooted_tree, metadata_object, sampling_depth=15000):
+def run_diversity_metrics(base_dir, dada2_filtered_table, phylo_rooted_tree, metadata_object, sampling_depth=None):
     logging.info('Attempting to calculate diversity metrics')
+
+    if sampling_depth is None:
+        sampling_depth = calculate_maximum_depth(dada2_filtered_table) * 0.5
 
     # Path setup
     bray_curtis_path = os.path.join(base_dir, 'bray_curtis_emperor.qzv')
