@@ -151,8 +151,32 @@ def create_sampledata_artifact(datadir, qiimedir):
                                                                            qiimeout=os.path.join(qiimedir,'paired-sample-data.qza'))
     out, err = execute_command(cmd)
 
-    logging.debug('STDOUT:{}'.format(out))
-    logging.debug('STDERR:{}'.format(err))
     logging.info('Successfully created QIIME 2 data Artifact')
 
     return os.path.join(qiimedir,'paired-sample-data.qza')
+
+def project_setup(outdir, inputdir):
+    # Create folder structure
+    os.mkdir(outdir)
+    os.mkdir(os.path.join(outdir, 'data'))
+    os.mkdir(os.path.join(outdir, 'qiime2'))
+    logging.debug('Created QIIME 2 folder structure at {}'.format(outdir))
+
+    # Prepare dictionary containing R1 and R2 for each sample ID
+    sample_dictionary = get_sample_dictionary(inputdir)
+    logging.debug('Sample Dictionary:{}'.format(sample_dictionary))
+
+    # Create symlinks in data folder
+    symlink_dictionary(sample_dictionary=sample_dictionary,
+                                        destination_folder=os.path.join(outdir, 'data'))
+    logging.debug('Creating symlinks within the following folder: {}'.format(os.path.join(outdir, 'data')))
+
+    # Fix symlink filenames for Qiime 2
+    append_dummy_barcodes(os.path.join(outdir, 'data'))
+    logging.debug('Appended dummy barcodes successfully')
+
+    # Call Qiime 2 to create artifact
+    logging.info('Creating sample data artifact for QIIME 2')
+    data_artifact_path = create_sampledata_artifact(datadir=os.path.join(outdir, 'data'),
+                                                    qiimedir=os.path.join(outdir, 'qiime2'))
+    return data_artifact_path
