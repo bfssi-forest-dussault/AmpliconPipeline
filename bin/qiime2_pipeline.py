@@ -38,6 +38,8 @@ def visualize_metadata(base_dir, metadata_object):
 
 
 def visualize_demux(base_dir, data_artifact):
+    logging.info('Running demux visualizer...')
+
     # Path setup
     export_path = os.path.join(base_dir, 'demux_summary.qzv')
 
@@ -71,7 +73,7 @@ def dada2_qc(base_dir, demultiplexed_seqs, trim_left_f=10, trim_left_r=10, trunc
     # Save artifacts
     dada2_filtered_table.save(os.path.join(base_dir, 'table-dada2.qza'))
     dada2_filtered_rep_seqs.save(os.path.join(base_dir, 'rep-seqs-dada2.qza'))
-    logging.info('Completed running dada2.')
+    logging.info('Completed running dada2')
 
     return dada2_filtered_table, dada2_filtered_rep_seqs
 
@@ -170,7 +172,7 @@ def alpha_rarefaction_visualization(base_dir, dada2_filtered_table, max_depth=No
 
     # Max depth calculation. This (arbitrarily) sets the maximum depth to 80% of the highest value found.
     if max_depth is None:
-        max_depth = calculate_maximum_depth(dada2_filtered_table) * 0.8
+        max_depth = int(calculate_maximum_depth(dada2_filtered_table) * 0.8)
 
     # Produce rarefaction curve
     alpha_rarefaction_viz = diversity.visualizers.alpha_rarefaction(table=dada2_filtered_table,
@@ -227,7 +229,7 @@ def run_diversity_metrics(base_dir, dada2_filtered_table, phylo_rooted_tree, met
 
     # Set sampling_depth to half of the maximum if no value is provided
     if sampling_depth is None:
-        sampling_depth = calculate_maximum_depth(dada2_filtered_table) * 0.5
+        sampling_depth = int(calculate_maximum_depth(dada2_filtered_table) * 0.5)
 
     # Path setup
     bray_curtis_path = os.path.join(base_dir, 'bray_curtis_emperor.qzv')
@@ -341,11 +343,7 @@ def run_pipeline(base_dir, data_artifact_path, sample_metadata_path, classifier_
 
     # Filter & denoise w/dada2
     (dada2_filtered_table, dada2_filtered_rep_seqs) = dada2_qc(base_dir=base_dir,
-                                                               demultiplexed_seqs=data_artifact,
-                                                               trim_left_f=27,
-                                                               trim_left_r=10,
-                                                               trunc_len_f=275,
-                                                               trunc_len_r=200)
+                                                               demultiplexed_seqs=data_artifact)
     # Visualize dada2
     feature_table_summary = visualize_dada2(base_dir=base_dir,
                                             dada2_filtered_table=dada2_filtered_table,
