@@ -50,14 +50,15 @@ def cli(ctx, inputdir, outdir, metadata, classifier, evaluate_quality, verbose):
             datefmt='%Y-%m-%d %H:%M:%S')
 
     if evaluate_quality:
-        data_artifact_path = helper_functions.project_setup(outdir=outdir, inputdir=inputdir)
         logging.info('Starting QIIME2-QC Pipeline with output routing to {}'.format(outdir))
+        data_artifact_path = helper_functions.project_setup(outdir=outdir, inputdir=inputdir)
         qiime2_pipeline.run_qc_pipeline(base_dir=os.path.join(outdir, 'qiime2'),
                                         data_artifact_path=data_artifact_path,
                                         sample_metadata_path=metadata)
         logging.info('\nQIIME2-QC Pipeline Completed')
-        ctx.quit()
+        ctx.exit()
 
+    logging.info('Starting QIIME2 Pipeline with output routing to {}'.format(outdir))
 
     # Input validation
     if classifier is None:
@@ -76,7 +77,6 @@ def cli(ctx, inputdir, outdir, metadata, classifier, evaluate_quality, verbose):
     data_artifact_path = helper_functions.project_setup(outdir=outdir, inputdir=inputdir)
 
     # Run the full pipeline
-    logging.info('Starting QIIME2 Pipeline with output routing to {}'.format(outdir))
     qiime2_pipeline.run_pipeline(base_dir=os.path.join(outdir, 'qiime2'),
                                  data_artifact_path=data_artifact_path,
                                  sample_metadata_path=metadata,
