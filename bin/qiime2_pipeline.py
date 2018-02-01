@@ -16,16 +16,29 @@ from qiime2.plugins import feature_table, \
 
 
 def load_data_artifact(filepath):
+    """
+    :param filepath: path to qiime2 artifact created with helper_functions.create_sampledata_artifact
+    :return: qiime2 object containing all information on sequence data
+    """
     data_artifact = qiime2.Artifact.load(filepath)
     return data_artifact
 
 
 def load_sample_metadata(filepath):
+    """
+    :param filepath: path to the sample metadata file
+    :return: qiime2 metadata object
+    """
     metadata_object = qiime2.Metadata.load(filepath)
     return metadata_object
 
 
 def visualize_metadata(base_dir, metadata_object):
+    """
+    :param base_dir: Main working directory filepath
+    :param metadata_object: qiime2 metadata object
+    :return: qiime2 metadata visualization object
+    """
     # Path setup
     export_path = os.path.join(base_dir, 'sample-metadata-tabulate')
 
@@ -38,6 +51,11 @@ def visualize_metadata(base_dir, metadata_object):
 
 
 def visualize_demux(base_dir, data_artifact):
+    """
+    :param base_dir: Main working directory filepath
+    :param data_artifact: qiime2 data artifact object
+    :return: qiime2 demux visualization object
+    """
     logging.info('Running demux visualizer...')
 
     # Path setup
@@ -53,6 +71,17 @@ def visualize_demux(base_dir, data_artifact):
 
 def dada2_qc(base_dir, demultiplexed_seqs, trim_left_f=10, trim_left_r=10, trunc_len_f=0, trunc_len_r=260,
              chimera_method='consensus', cpu_count=None):
+    """
+    :param base_dir: Main working directory filepath
+    :param demultiplexed_seqs:
+    :param trim_left_f:
+    :param trim_left_r:
+    :param trunc_len_f:
+    :param trunc_len_r:
+    :param chimera_method:
+    :param cpu_count:
+    :return: qiime2/dada2 filtered table and representative sequences objects
+    """
     logging.info('Running dada2 for quality control of reads...')
 
     # Grab all CPUs if parameter is not specified
@@ -79,6 +108,13 @@ def dada2_qc(base_dir, demultiplexed_seqs, trim_left_f=10, trim_left_r=10, trunc
 
 
 def visualize_dada2(base_dir, dada2_filtered_table, dada2_filtered_rep_seqs, metadata_object):
+    """
+    :param base_dir: Main working directory filepath
+    :param dada2_filtered_table: 
+    :param dada2_filtered_rep_seqs: 
+    :param metadata_object: 
+    :return: qiime2 feature table summary object
+    """
     # Prepare feature table
     feature_table_summary = feature_table.visualizers.summarize(table=dada2_filtered_table,
                                                                 sample_metadata=metadata_object)
@@ -95,6 +131,12 @@ def visualize_dada2(base_dir, dada2_filtered_table, dada2_filtered_rep_seqs, met
 
 
 def seq_alignment_mask(base_dir, dada2_filtered_rep_seqs, cpu_count=None):
+    """
+    :param base_dir: Main working directory filepath
+    :param dada2_filtered_rep_seqs: 
+    :param cpu_count: number of CPUs to use for analysis
+    :return: qiime2 sequence mask and sequence alignment objects
+    """
     # CPU setup
     if cpu_count is None:
         cpu_count = multiprocessing.cpu_count()
@@ -118,6 +160,11 @@ def seq_alignment_mask(base_dir, dada2_filtered_rep_seqs, cpu_count=None):
 
 
 def phylo_tree(base_dir, seq_mask):
+    """
+    :param base_dir: Main working directory filepath
+    :param seq_mask: 
+    :return: qiime2 unrooted and rooted tree objects
+    """
     # Path setup
     unrooted_export_path = os.path.join(base_dir, 'unrooted-tree.qza')
     rooted_export_path = os.path.join(base_dir, 'rooted-tree.qza')
@@ -136,6 +183,11 @@ def phylo_tree(base_dir, seq_mask):
 
 
 def export_newick(base_dir, tree):
+    """
+    :param base_dir: Main working directory filepath
+    :param tree: 
+    :return: path to tree file in newick format exported from the tree object
+    """
     # Path setup
     export_path = os.path.join(base_dir, 'newick.tree')
 
@@ -146,13 +198,21 @@ def export_newick(base_dir, tree):
 
 
 def load_classifier_artifact(classifier_artifact_path):
+    """
+    :param classifier_artifact_path: 
+    :return: qiime2 classifier object
+    """
     # Load existing artifact
-    naive_bayes_classifier = qiime2.Artifact.load(classifier_artifact_path)
+    classifier = qiime2.Artifact.load(classifier_artifact_path)
     logging.info('Loaded classifier from {}'.format(classifier_artifact_path))
-    return naive_bayes_classifier
+    return classifier
 
 
 def calculate_maximum_depth(dada2_table):
+    """
+    :param dada2_table:
+    :return: maximum depth retrieved from the qiime2/dada2 table object
+    """
     # Read in dada2 table
     df = dada2_table.view(pd.DataFrame)
     df = df.transpose()
@@ -167,6 +227,12 @@ def calculate_maximum_depth(dada2_table):
 
 
 def alpha_rarefaction_visualization(base_dir, dada2_filtered_table, max_depth=None):
+    """
+    :param base_dir: Main working directory filepath
+    :param dada2_filtered_table: 
+    :param max_depth: 
+    :return: qiime2 alpha rarefaction visualization object
+    """
     # Path setup
     alpha_rarefaction_export_path = os.path.join(base_dir, 'alpha-rarefaction.qzv')
 
@@ -186,6 +252,12 @@ def alpha_rarefaction_visualization(base_dir, dada2_filtered_table, max_depth=No
 
 
 def classify_taxonomy(base_dir, dada2_filtered_rep_seqs, classifier):
+    """
+    :param base_dir: Main working directory filepath
+    :param dada2_filtered_rep_seqs: 
+    :param classifier: 
+    :return: qiime2 post-classification taxonomy object
+    """
     # Path setup
     export_path = os.path.join(base_dir, 'taxonomy.qza')
 
@@ -200,6 +272,13 @@ def classify_taxonomy(base_dir, dada2_filtered_rep_seqs, classifier):
 
 
 def visualize_taxonomy(base_dir, metadata_object, taxonomy_analysis, dada2_filtered_table):
+    """
+    :param base_dir: Main working directory filepath
+    :param metadata_object: 
+    :param taxonomy_analysis: 
+    :param dada2_filtered_table: 
+    :return: qiime2 taxonomy metadata object
+    """
     # Path setup
     tax_export_path = os.path.join(base_dir, 'taxonomy.qzv')
     barplot_export_path = os.path.join(base_dir, 'taxonomy_barplot.qzv')
@@ -225,11 +304,19 @@ def visualize_taxonomy(base_dir, metadata_object, taxonomy_analysis, dada2_filte
 
 
 def run_diversity_metrics(base_dir, dada2_filtered_table, phylo_rooted_tree, metadata_object, sampling_depth=None):
+    """
+    :param base_dir: Main working directory filepath
+    :param dada2_filtered_table: 
+    :param phylo_rooted_tree: 
+    :param metadata_object: 
+    :param sampling_depth: 
+    :return: qiime2 diversity core metrics object
+    """
     logging.info('Attempting to calculate diversity metrics')
 
-    # Set sampling_depth to half of the maximum if no value is provided
+    # Set sampling_depth to 60% of the maximum if no value is provided
     if sampling_depth is None:
-        sampling_depth = int(calculate_maximum_depth(dada2_filtered_table) * 0.5)
+        sampling_depth = int(calculate_maximum_depth(dada2_filtered_table) * 0.6)
 
     # Path setup
     bray_curtis_path = os.path.join(base_dir, 'bray_curtis_emperor.qzv')
@@ -318,7 +405,24 @@ def train_feature_classifier(base_dir, otu_filepath, reference_taxonomy_filepath
     return naive_bayes_classifier
 
 
+# TODO: Implement these features https://docs.qiime2.org/2017.12/tutorials/longitudinal/ for longitudinal data
+def longitudinal_comparison(base_dir):
+    pass
+
+
+def merge_feature_tables(base_dir):
+    pass
+
+
 def run_qc_pipeline(base_dir, data_artifact_path, sample_metadata_path):
+    """
+    1. Loads qiime2 generated data artifact and sample metadata file into a qiime2 artifact
+    2. Generates a visualization of pre-filtering sequence quality
+
+    :param base_dir: Main working directory filepath
+    :param data_artifact_path:
+    :param sample_metadata_path:
+    """
     # Load seed objects
     data_artifact = load_data_artifact(data_artifact_path)
     metadata_object = load_sample_metadata(sample_metadata_path)
@@ -331,6 +435,22 @@ def run_qc_pipeline(base_dir, data_artifact_path, sample_metadata_path):
 
 
 def run_pipeline(base_dir, data_artifact_path, sample_metadata_path, classifier_artifact_path):
+    """
+    1. Loads qiime2 generated data artifact and sample metadata file into a qiime2 artifact
+    2. Filters, denoises reads with dada2
+    3. Multiple sequence alignment and masking of highly variable regions
+    4. Generate a phylogenetic tree
+    5. Load an existing qiime2 classifier artifact
+    6. Generate alpha rarefaction curves
+    7. Conduct taxonomic analysis
+    8. Generate taxonomy barplots
+    9. Run diversity metrics
+
+    :param base_dir: Main working directory filepath
+    :param data_artifact_path:
+    :param sample_metadata_path:
+    :param classifier_artifact_path:
+    """
     # Load seed objects
     data_artifact = load_data_artifact(data_artifact_path)
     metadata_object = load_sample_metadata(sample_metadata_path)
@@ -361,7 +481,7 @@ def run_pipeline(base_dir, data_artifact_path, sample_metadata_path, classifier_
     export_newick(base_dir=base_dir, tree=phylo_rooted_tree)
 
     # Load classifier
-    naive_bayes_classifier = load_classifier_artifact(classifier_artifact_path=classifier_artifact_path)
+    classifier = load_classifier_artifact(classifier_artifact_path=classifier_artifact_path)
 
     # Produce rarefaction visualization
     alpha_rarefaction_viz = alpha_rarefaction_visualization(base_dir=base_dir,
@@ -370,7 +490,7 @@ def run_pipeline(base_dir, data_artifact_path, sample_metadata_path, classifier_
     # Run taxonomic analysis
     taxonomy_analysis = classify_taxonomy(base_dir=base_dir,
                                           dada2_filtered_rep_seqs=dada2_filtered_rep_seqs,
-                                          classifier=naive_bayes_classifier)
+                                          classifier=classifier)
 
     # Visualize taxonomy
     taxonomy_metadata = visualize_taxonomy(base_dir=base_dir,
