@@ -69,7 +69,8 @@ def visualize_demux(base_dir, data_artifact):
     return demux_viz
 
 
-def dada2_qc(base_dir, demultiplexed_seqs, trim_left_f=10, trim_left_r=10, trunc_len_f=0, trunc_len_r=260,
+def dada2_qc(base_dir, demultiplexed_seqs,
+             trim_left_f=18, trim_left_r=8, trunc_len_f=280, trunc_len_r=245,
              chimera_method='consensus', cpu_count=None):
     """
     :param base_dir: Main working directory filepath
@@ -434,6 +435,28 @@ def run_qc_pipeline(base_dir, data_artifact_path, sample_metadata_path):
     demux_viz = visualize_demux(base_dir=base_dir, data_artifact=data_artifact)
 
 
+def read_metadata_df(sample_metadata_path):
+    df = pd.read_csv(sample_metadata_path, delimiter='\t')
+    return df
+
+
+def validate_sample_id(sample_id):
+    if not sample_id.endswith('_00'):
+        sample_id += '_00'
+        logging.info('Sample ID in metadata not correctly named. Appending _00 to {}'.format(sample_id))
+    return sample_id
+
+
+def write_new_metadata(base_dir, df):
+    df.to_csv(os.path.join(base_dir, 'sample-metadata.tsv'), sep='\t', index=None)
+
+
+def validate_metadata(base_dir, sample_metadata_path):
+    df = read_metadata_df(sample_metadata_path)
+    df['#SampleID'] = df['#SampleID'].apply(validate_sample_id)
+    write_new_metadata(base_dir, df)
+
+
 def run_pipeline(base_dir, data_artifact_path, sample_metadata_path, classifier_artifact_path):
     """
     1. Loads qiime2 generated data artifact and sample metadata file into a qiime2 artifact
@@ -451,8 +474,13 @@ def run_pipeline(base_dir, data_artifact_path, sample_metadata_path, classifier_
     :param sample_metadata_path:
     :param classifier_artifact_path:
     """
-    # Load seed objects
+    # Load seed object
     data_artifact = load_data_artifact(data_artifact_path)
+
+    # Validate and correct metadata (currently only adds _00 if the SampleID doesn't end with it already)
+    validate_metadata(base_dir, sample_metadata_path)
+
+    # Load metadata
     metadata_object = load_sample_metadata(sample_metadata_path)
 
     # Visualize metadata
