@@ -3,7 +3,8 @@
 ### Description
 
 This program will take an OLC 16S MiSeq amplicon sequencing run and
-process the output with QIIME 2.
+process the output with QIIME 2. Currently, this is intended to be used
+internally within the OLC R&D division.
 
 ### Installation Instructions
 
