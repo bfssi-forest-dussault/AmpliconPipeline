@@ -70,7 +70,7 @@ def visualize_demux(base_dir, data_artifact):
 
 
 def dada2_qc(base_dir, demultiplexed_seqs,
-             trim_left_f=18, trim_left_r=8, trunc_len_f=280, trunc_len_r=245,
+             trim_left_f=22, trim_left_r=7, trunc_len_f=0, trunc_len_r=220,
              chimera_method='consensus', cpu_count=None):
     """
     :param base_dir: Main working directory filepath
@@ -138,7 +138,7 @@ def seq_alignment_mask(base_dir, dada2_filtered_rep_seqs, cpu_count=None):
     :param cpu_count: number of CPUs to use for analysis
     :return: qiime2 sequence mask and sequence alignment objects
     """
-    # CPU setup
+    # Threading setup
     if cpu_count is None:
         cpu_count = multiprocessing.cpu_count()
         logging.info('Set CPU count to {}'.format(cpu_count))
@@ -252,7 +252,7 @@ def alpha_rarefaction_visualization(base_dir, dada2_filtered_table, max_depth=No
     return alpha_rarefaction_viz
 
 
-def classify_taxonomy(base_dir, dada2_filtered_rep_seqs, classifier):
+def classify_taxonomy(base_dir, dada2_filtered_rep_seqs, classifier, cpu_count=None):
     """
     :param base_dir: Main working directory filepath
     :param dada2_filtered_rep_seqs: 
@@ -262,9 +262,15 @@ def classify_taxonomy(base_dir, dada2_filtered_rep_seqs, classifier):
     # Path setup
     export_path = os.path.join(base_dir, 'taxonomy.qza')
 
+    # Threading setup
+    if cpu_count is None:
+        cpu_count = multiprocessing.cpu_count()
+        logging.info('Set CPU count to {}'.format(cpu_count))
+
     # Classify reads
     taxonomy_analysis = feature_classifier.methods.classify_sklearn(reads=dada2_filtered_rep_seqs,
-                                                                    classifier=classifier)
+                                                                    classifier=classifier,
+                                                                    n_jobs=cpu_count)
     # Save the resulting artifact
     taxonomy_analysis.classification.save(export_path)
     logging.info('Saved {} successfully'.format(export_path))
@@ -315,9 +321,9 @@ def run_diversity_metrics(base_dir, dada2_filtered_table, phylo_rooted_tree, met
     """
     logging.info('Attempting to calculate diversity metrics')
 
-    # Set sampling_depth to 60% of the maximum if no value is provided
+    # Set sampling_depth to 10% of the maximum if no value is provided. Should rework how this value is generated.
     if sampling_depth is None:
-        sampling_depth = int(calculate_maximum_depth(dada2_filtered_table) * 0.6)
+        sampling_depth = int(calculate_maximum_depth(dada2_filtered_table) * 0.1)
 
     # Path setup
     bray_curtis_path = os.path.join(base_dir, 'bray_curtis_emperor.qzv')
@@ -376,7 +382,7 @@ def run_diversity_metrics(base_dir, dada2_filtered_table, phylo_rooted_tree, met
     return diversity_metrics
 
 
-# TODO: Implement this.
+# TODO: Implement this function to allow for training
 def train_feature_classifier(base_dir, otu_filepath, reference_taxonomy_filepath, f_primer=None, r_primer=None):
     """
     Trains a Naive Bayes classifier based on a reference database/taxonomy
