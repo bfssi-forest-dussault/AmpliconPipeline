@@ -449,7 +449,7 @@ def read_metadata_df(sample_metadata_path):
 def validate_sample_id(sample_id):
     if not sample_id.endswith('_00'):
         sample_id += '_00'
-        logging.info('Sample ID in metadata not correctly named. Appending _00 to {}'.format(sample_id))
+        logging.info('Sample ID in metadata not correctly named --> corrected to: {}'.format(sample_id))
     return sample_id
 
 
@@ -459,11 +459,11 @@ def write_new_metadata(base_dir, df):
 
 def validate_metadata(base_dir, sample_metadata_path):
     df = read_metadata_df(sample_metadata_path)
-    df['#SampleID'] = df['#SampleID'].apply(validate_sample_id)
+    df['#SampleID'] = df['#SampleID'].apply(validate_sample_id)  # Assumption that first column is the SampleID column
     write_new_metadata(base_dir, df)
 
 
-def run_pipeline(base_dir, data_artifact_path, sample_metadata_path, classifier_artifact_path):
+def run_pipeline(base_dir, data_artifact_path, sample_metadata_path, classifier_artifact_path, filtering_flag=False):
     """
     1. Loads qiime2 generated data artifact and sample metadata file into a qiime2 artifact
     2. Filters, denoises reads with dada2
@@ -504,37 +504,39 @@ def run_pipeline(base_dir, data_artifact_path, sample_metadata_path, classifier_
                                             dada2_filtered_rep_seqs=dada2_filtered_rep_seqs,
                                             metadata_object=metadata_object)
 
-    # Mask and alignment
-    (seq_mask, seq_alignment) = seq_alignment_mask(base_dir=base_dir,
-                                                   dada2_filtered_rep_seqs=dada2_filtered_rep_seqs)
+    # Only do these steps if the filtering_flag is false
+    if filtering_flag == False:
+        # Mask and alignment
+        (seq_mask, seq_alignment) = seq_alignment_mask(base_dir=base_dir,
+                                                       dada2_filtered_rep_seqs=dada2_filtered_rep_seqs)
 
-    # Phylogenetic tree
-    (phylo_unrooted_tree, phylo_rooted_tree) = phylo_tree(base_dir=base_dir, seq_mask=seq_mask)
+        # Phylogenetic tree
+        (phylo_unrooted_tree, phylo_rooted_tree) = phylo_tree(base_dir=base_dir, seq_mask=seq_mask)
 
-    # Export tree
-    export_newick(base_dir=base_dir, tree=phylo_rooted_tree)
+        # Export tree
+        export_newick(base_dir=base_dir, tree=phylo_rooted_tree)
 
-    # Load classifier
-    classifier = load_classifier_artifact(classifier_artifact_path=classifier_artifact_path)
+        # Load classifier
+        classifier = load_classifier_artifact(classifier_artifact_path=classifier_artifact_path)
 
-    # Produce rarefaction visualization
-    alpha_rarefaction_viz = alpha_rarefaction_visualization(base_dir=base_dir,
-                                                            dada2_filtered_table=dada2_filtered_table)
+        # Produce rarefaction visualization
+        alpha_rarefaction_viz = alpha_rarefaction_visualization(base_dir=base_dir,
+                                                                dada2_filtered_table=dada2_filtered_table)
 
-    # Run taxonomic analysis
-    taxonomy_analysis = classify_taxonomy(base_dir=base_dir,
-                                          dada2_filtered_rep_seqs=dada2_filtered_rep_seqs,
-                                          classifier=classifier)
+        # Run taxonomic analysis
+        taxonomy_analysis = classify_taxonomy(base_dir=base_dir,
+                                              dada2_filtered_rep_seqs=dada2_filtered_rep_seqs,
+                                              classifier=classifier)
 
-    # Visualize taxonomy
-    taxonomy_metadata = visualize_taxonomy(base_dir=base_dir,
-                                           metadata_object=metadata_object,
-                                           taxonomy_analysis=taxonomy_analysis,
-                                           dada2_filtered_table=dada2_filtered_table)
+        # Visualize taxonomy
+        taxonomy_metadata = visualize_taxonomy(base_dir=base_dir,
+                                               metadata_object=metadata_object,
+                                               taxonomy_analysis=taxonomy_analysis,
+                                               dada2_filtered_table=dada2_filtered_table)
 
-    # Alpha and beta diversity
-    # TODO: requires metadata object with some sort of sample information (sample type). Need to handle this gracefully.
-    diversity_metrics = run_diversity_metrics(base_dir=base_dir,
-                                              dada2_filtered_table=dada2_filtered_table,
-                                              phylo_rooted_tree=phylo_rooted_tree,
-                                              metadata_object=metadata_object)
+        # Alpha and beta diversity
+        # TODO: requires metadata object with some sort of sample information (sample type). Need to handle this gracefully.
+        diversity_metrics = run_diversity_metrics(base_dir=base_dir,
+                                                  dada2_filtered_table=dada2_filtered_table,
+                                                  phylo_rooted_tree=phylo_rooted_tree,
+                                                  metadata_object=metadata_object)
