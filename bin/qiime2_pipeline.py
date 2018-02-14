@@ -373,7 +373,7 @@ def run_diversity_metrics(base_dir, dada2_filtered_table, phylo_rooted_tree, met
     try:
         beta_group = diversity.visualizers.beta_group_significance(
             distance_matrix=diversity_metrics.unweighted_unifrac_distance_matrix,
-            metadata=metadata_object.get_category('Sample_Type'),
+            metadata=metadata_object.get_category('sample sub-sub-type'),
             pairwise=True)
         beta_group.visualization.save(beta_visualization_path)
     except:
@@ -449,18 +449,22 @@ def read_metadata_df(sample_metadata_path):
 def validate_sample_id(sample_id):
     if not sample_id.endswith('_00'):
         sample_id += '_00'
-        logging.info('Sample ID in metadata not correctly named --> corrected to: {}'.format(sample_id))
+        logging.debug('Sample ID in metadata not correctly named --> corrected to: {}'.format(sample_id))
     return sample_id
 
 
-def write_new_metadata(base_dir, df):
-    df.to_csv(os.path.join(base_dir, 'sample-metadata.tsv'), sep='\t', index=None)
+def write_new_metadata(df, sample_metadata_path):
+    new_metadata_path = os.path.join(os.path.dirname(sample_metadata_path),
+                                     os.path.basename(sample_metadata_path).replace('.tsv','_Validated.tsv'))
+    df.to_csv(new_metadata_path, sep='\t', index=None)
+    return new_metadata_path
 
 
 def validate_metadata(base_dir, sample_metadata_path):
     df = read_metadata_df(sample_metadata_path)
     df['#SampleID'] = df['#SampleID'].apply(validate_sample_id)  # Assumption that first column is the SampleID column
-    write_new_metadata(base_dir, df)
+    new_metadata_path = write_new_metadata(df, sample_metadata_path)
+    return new_metadata_path
 
 
 def run_pipeline(base_dir, data_artifact_path, sample_metadata_path, classifier_artifact_path, filtering_flag=False):
@@ -484,10 +488,10 @@ def run_pipeline(base_dir, data_artifact_path, sample_metadata_path, classifier_
     data_artifact = load_data_artifact(data_artifact_path)
 
     # Validate and correct metadata (currently only adds _00 if the SampleID doesn't end with it already)
-    validate_metadata(base_dir, sample_metadata_path)
+    new_metadata_path = validate_metadata(base_dir, sample_metadata_path)
 
     # Load metadata
-    metadata_object = load_sample_metadata(sample_metadata_path)
+    metadata_object = load_sample_metadata(new_metadata_path)
 
     # Visualize metadata
     metadata_viz = visualize_metadata(base_dir=base_dir, metadata_object=metadata_object)
