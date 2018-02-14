@@ -20,7 +20,7 @@ from bin import qiime2_pipeline
 @click.option('-m', '--metadata',
               type=click.Path(exists=True),
               required=True,
-              help='Path to QIIME2 tab-separated metadata file')
+              help='Path to QIIME2 tab-separated metadata file. This file have the .tsv extension.')
 @click.option('-eq','--evaluate_quality',
               is_flag=True,
               default=False,
@@ -31,12 +31,16 @@ from bin import qiime2_pipeline
               type=click.Path(exists=True),
               required=False,
               help='Path to QIIME2 Classifier Artifact')
+@click.option('-f', '--filtering_flag',
+              is_flag=True,
+              default=False,
+              help='Set flag to only proceed to the filtering step of analysis')
 @click.option('-v', '--verbose',
               is_flag=True,
               default=False,
               help='Set flag to enable more verbose output')
 @click.pass_context
-def cli(ctx, inputdir, outdir, metadata, classifier, evaluate_quality, verbose):
+def cli(ctx, inputdir, outdir, metadata, classifier, evaluate_quality, filtering_flag, verbose):
     # Logging setup
     if verbose:
         logging.basicConfig(
@@ -76,11 +80,16 @@ def cli(ctx, inputdir, outdir, metadata, classifier, evaluate_quality, verbose):
     # Project setup + get path to data artifact
     data_artifact_path = helper_functions.project_setup(outdir=outdir, inputdir=inputdir)
 
+    # Filtering flag
+    if filtering_flag:
+        logging.info('FILTERING_FLAG SET. Pipeline will only proceed to DADA2 step.')
+
     # Run the full pipeline
     qiime2_pipeline.run_pipeline(base_dir=os.path.join(outdir, 'qiime2'),
                                  data_artifact_path=data_artifact_path,
                                  sample_metadata_path=metadata,
-                                 classifier_artifact_path=classifier)
+                                 classifier_artifact_path=classifier,
+                                 filtering_flag=filtering_flag)
     logging.info('\nQIIME2 Pipeline Completed')
     ctx.exit()
 
