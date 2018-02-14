@@ -116,7 +116,7 @@ def append_dummy_barcodes(path):
         if valid_olc_id(file):
             # TODO: Make this renaming more robust with some regex
             os.rename(os.path.abspath(file), os.path.abspath(file).replace('_S', '_00_S'))
-    logging.info('Renamed all valid OLC *.fastq.gz files in {}'.format(path))
+    logging.info('Added dummy barcodes to all valid OLC *.fastq.gz files in {}'.format(path))
 
 
 def create_symlink(target, destination_folder):
@@ -175,7 +175,6 @@ def project_setup(outdir, inputdir):
 
     # Fix symlink filenames for Qiime 2
     append_dummy_barcodes(os.path.join(outdir, 'data'))
-    logging.debug('Appended dummy barcodes successfully')
 
     # Call Qiime 2 to create artifact
     logging.info('Creating sample data artifact for QIIME 2...')
