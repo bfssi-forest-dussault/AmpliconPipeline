@@ -62,8 +62,6 @@ def cli(ctx, inputdir, outdir, metadata, classifier, evaluate_quality, filtering
         logging.info('\nQIIME2-QC Pipeline Completed')
         ctx.exit()
 
-    logging.info('Starting QIIME2 Pipeline with output routing to {}'.format(outdir))
-
     # Input validation
     if classifier is None:
         click.echo(ctx.get_help(), err=True)
@@ -85,6 +83,7 @@ def cli(ctx, inputdir, outdir, metadata, classifier, evaluate_quality, filtering
         logging.info('FILTERING_FLAG SET. Pipeline will only proceed to DADA2 step.')
 
     # Run the full pipeline
+    logging.info('Starting QIIME2 Pipeline with output routing to {}'.format(outdir))
     qiime2_pipeline.run_pipeline(base_dir=os.path.join(outdir, 'qiime2'),
                                  data_artifact_path=data_artifact_path,
                                  sample_metadata_path=metadata,
