@@ -69,8 +69,9 @@ def visualize_demux(base_dir, data_artifact):
     return demux_viz
 
 
+# RUN 1 PARAMS
 def dada2_qc(base_dir, demultiplexed_seqs,
-             trim_left_f=22, trim_left_r=7, trunc_len_f=0, trunc_len_r=220,
+             trim_left_f=18, trim_left_r=8, trunc_len_f=280, trunc_len_r=245, max_ee=3,
              chimera_method='consensus', cpu_count=None):
     """
     :param base_dir: Main working directory filepath
@@ -97,6 +98,7 @@ def dada2_qc(base_dir, demultiplexed_seqs,
         trim_left_r=trim_left_r,
         trunc_len_f=trunc_len_f,
         trunc_len_r=trunc_len_r,
+        max_ee=max_ee,
         chimera_method=chimera_method,
         n_threads=cpu_count)
 
