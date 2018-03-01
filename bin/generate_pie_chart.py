@@ -280,6 +280,14 @@ def my_autopct(pct):
     return (('%.2f' % pct) + '%') if pct > 2 else ''
 
 
+def get_spaced_colors(n):
+    max_value = 16581375  # 255**3
+    interval = int(max_value / n)
+    colors = [hex(I)[2:].zfill(6) for I in range(0, max_value, interval)]
+
+    return [((int(i[:2], 16)) / 255, (int(i[2:4], 16)) / 255, (int(i[4:], 16) / 255)) for i in colors]
+
+
 def generate_color_pickle():
     """
     Generate a new color dictionary whenever necessary.
@@ -305,13 +313,6 @@ def generate_color_pickle():
 
     len(filtered_mega_tax)
 
-    def get_spaced_colors(n):
-        max_value = 16581375  # 255**3
-        interval = int(max_value / n)
-        colors = [hex(I)[2:].zfill(6) for I in range(0, max_value, interval)]
-
-        return [((int(i[:2], 16)) / 255, (int(i[2:4], 16)) / 255, (int(i[4:], 16) / 255)) for i in colors]
-
     thing = get_spaced_colors(len(filtered_mega_tax))
 
     colordict = {}
@@ -321,6 +322,7 @@ def generate_color_pickle():
     # manual additions
     colordict['Hafnia-Obesumbacterium'] = 'green'
     colordict['Enterobacteriales'] = 'lightblue'
+    colordict['Unassigned'] = 'grey'
 
     import pickle
     pickle.dump(colordict, open("taxonomic_color_dictionary.pickle", "wb"))
@@ -396,7 +398,6 @@ def extract_viz_csv(input_path, out_dir):
               required=False,
               help='Filter dataset to a single group (e.g. Enterobacteriaceae)')
 def cli(input_file, out_dir, sample_1, sample_2, taxonomic_level, filtering):
-    generate_color_pickle()
 
     # Quick validation
     if not os.path.isdir(out_dir):
