@@ -1,8 +1,9 @@
 import os
 import glob
+import click
+import pickle
 import qiime2
 import shutil
-import click
 import random
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -11,23 +12,39 @@ import matplotlib as mpl
 from collections import OrderedDict
 
 
-# TODO: Make this less bad and also able to support genus, species, etc. instead of only family
-def extract_family(value):
+def extract_taxonomy(value):
+    """
+    :param value:
+    :return:
+    """
+
     try:
-        family = value.split('D_4__')[1]
-        if family == '':
-            family = 'D_3: ' + value.split('D_3__')[1].replace('D_4__', '')
+        tax_string = value.split(TAXONOMIC_DICT[TAXONOMIC_LEVEL][1])[1]
+        if tax_string == '':
+            tax_string = value
+            # tax_string = 'D_3: ' + value.split('D_3__')[1].replace('D_4__', '')
     except:
-        family = value
-    return family
+        tax_string = value
+    return tax_string
 
 
 def convert_to_percentages(df, cols):
+    """
+    :param df:
+    :param cols:
+    :return:
+    """
     df[cols] = df[cols].div(df[cols].sum(axis=0), axis=1).multiply(100)
     return df
 
 
 def get_column_pair(df, col1, col2):
+    """
+    :param df:
+    :param col1:
+    :param col2:
+    :return:
+    """
     # Filter columns
     df = df.filter([col1, col2], axis=1)
 
@@ -36,7 +53,12 @@ def get_column_pair(df, col1, col2):
     return df
 
 
-def prepare_df_family(filepath, index_col):
+def prepare_df(filepath, index_col):
+    """
+    :param filepath:
+    :param index_col:
+    :return:
+    """
     df = pd.read_csv(filepath, index_col=index_col)
 
     # Remove all extraneous columns
@@ -46,11 +68,11 @@ def prepare_df_family(filepath, index_col):
     df = df.transpose()
     df = df.reset_index()
 
-    # Create family column
-    df['family'] = df['index'].map(extract_family)
+    # Create taxonomic basename column
+    df[TAXONOMIC_LEVEL] = df['index'].map(extract_taxonomy)
 
     # Columns to target for conversion to percentage
-    columns_to_target = [x for x in df.columns.tolist() if x not in ['index', 'family']]
+    columns_to_target = [x for x in df.columns.tolist() if x not in ['index', TAXONOMIC_LEVEL]]
 
     # Convert
     df = convert_to_percentages(df, columns_to_target)
@@ -59,12 +81,17 @@ def prepare_df_family(filepath, index_col):
 
 
 def fixed_df(filename, index='sample_annotation'):
-    df = prepare_df_family(filename, index)
+    """
+    :param filename:
+    :param index:
+    :return:
+    """
+    df = prepare_df(filename, index)
     new_filename = filename.replace('.csv', '_temp.csv')
 
     # Stupid hack
     df.to_csv(new_filename, index=None)
-    df = pd.read_csv(new_filename, index_col='family').fillna('NA')
+    df = pd.read_csv(new_filename, index_col=TAXONOMIC_LEVEL).fillna('NA')
 
     # Cleanup
     os.remove(new_filename)
@@ -81,6 +108,11 @@ def load_visualization(filepath):
 
 
 def prepare_plot(df, sampleid):
+    """
+    :param df:
+    :param sampleid:
+    :return:
+    """
     labels = []
     values = []
     ordered_dict = df.to_dict(into=OrderedDict)[sampleid]
@@ -102,6 +134,11 @@ def prepare_plot(df, sampleid):
 
 
 def style_wedges(wedges, colordict):
+    """
+    :param wedges:
+    :param colordict:
+    :return:
+    """
     # Wedges
     for wedge in wedges[0]:
         wedge.set_color('black')
@@ -112,11 +149,23 @@ def style_wedges(wedges, colordict):
 
 
 def paired_pie_charts(values1, labels1, explode1, sample1, values2, labels2, explode2, sample2, out_dir):
+    """
+    :param values1:
+    :param labels1:
+    :param explode1:
+    :param sample1:
+    :param values2:
+    :param labels2:
+    :param explode2:
+    :param sample2:
+    :param out_dir:
+    :return:
+    """
     # Style setup
     plt.style.use('fivethirtyeight')
 
-    # Consistent colouring across families
-    colordict = generate_family_color_dict()
+    # Consistent colouring across taxonomy. e.g. Listeria will always be red
+    colordict = read_color_pickle()
 
     # Font size
     mpl.rcParams['font.size'] = 9.5
@@ -140,11 +189,18 @@ def paired_pie_charts(values1, labels1, explode1, sample1, values2, labels2, exp
     ax2.axis('equal')
     plt.title(sample2)
 
-    outfile = os.path.join(out_dir, '{}_{}_plot.png'.format(sample1, sample2))
+    outfile = os.path.join(out_dir, '{}_{}_{}_plot.png'.format(sample1, sample2, TAXONOMIC_LEVEL.capitalize()))
     plt.savefig(outfile, bbox_inches='tight')
 
 
 def create_paired_pie_wrapper(filename, out_dir, sample1, sample2):
+    """
+    :param filename:
+    :param out_dir:
+    :param sample1:
+    :param sample2:
+    :return:
+    """
     df = fixed_df(filename)
     (values1, labels1, explode1) = prepare_plot(df, sample1)
     (values2, labels2, explode2) = prepare_plot(df, sample2)
@@ -152,33 +208,69 @@ def create_paired_pie_wrapper(filename, out_dir, sample1, sample2):
 
 
 def my_autopct(pct):
+    """
+    :param pct:
+    :return:
+    """
     return (('%.2f' % pct) + '%') if pct > 2 else ''
 
 
-def generate_family_color_dict():
-    file = open('/home/dussaultf/Documents/qiime2/graphing_taxonomic_output/color_list.txt', 'r')
-    color_list = file.readlines()
-    color_list = [x.strip() for x in color_list]
-
+def generate_color_pickle():
+    """
+    Generate a new color dictionary whenever necessary.
+    Not all OTUs are covered - I should probably just pull from Silva...
+    """
+    phylums = glob.glob('/mnt/nas/Databases/GenBank/typestrains/Bacteria/*/*')
+    classes = glob.glob('/mnt/nas/Databases/GenBank/typestrains/Bacteria/*/*/*')
+    orders = glob.glob('/mnt/nas/Databases/GenBank/typestrains/Bacteria/*/*/*/*')
     families = glob.glob('/mnt/nas/Databases/GenBank/typestrains/Bacteria/*/*/*/*')
-    families = [os.path.basename(x) for x in families]
+    genuses = glob.glob('/mnt/nas/Databases/GenBank/typestrains/Bacteria/*/*/*/*/*')
 
-    curated_families = []
-    for family in families:
-        if family.endswith('eae'):
-            curated_families.append(family)
-    color_list = color_list[:len(curated_families)]
+    mega_tax = []
+    mega_tax.extend(phylums)
+    mega_tax.extend(classes)
+    mega_tax.extend(orders)
+    mega_tax.extend(families)
+    mega_tax.extend(genuses)
+
+    filtered_mega_tax = []
+    for thing in mega_tax:
+        if not thing.endswith('.gz'):
+            filtered_mega_tax.append(os.path.basename(thing))
+
+    len(filtered_mega_tax)
+
+    def get_spaced_colors(n):
+        max_value = 16581375  # 255**3
+        interval = int(max_value / n)
+        colors = [hex(I)[2:].zfill(6) for I in range(0, max_value, interval)]
+
+        return [((int(i[:2], 16)) / 255, (int(i[2:4], 16)) / 255, (int(i[4:], 16) / 255)) for i in colors]
+
+    thing = get_spaced_colors(len(filtered_mega_tax))
 
     colordict = {}
-    for l, c in zip(curated_families, color_list):
+    for l, c in zip(filtered_mega_tax, thing):
         colordict[l] = c
 
+    # manual additions
+    colordict['Hafnia-Obesumbacterium'] = 'green'
+    colordict['Enterobacteriales'] = 'lightblue'
+
+    import pickle
+    pickle.dump(colordict, open("taxonomic_color_dictionary.pickle", "wb"))
+
+
+def read_color_pickle():
+    colordict = pickle.load(open("taxonomic_color_dictionary.pickle", "rb"))
     return colordict
 
 
-def extract_family_csv(input_path, output_path):
+def extract_viz_csv(input_path, out_dir):
     """
-    Output path is direct path to CSV file to create. This is really broken for some weird reason.
+    :param input_path:
+    :param out_dir:
+    :return:
     """
     # Load visualization file
     try:
@@ -189,7 +281,10 @@ def extract_family_csv(input_path, output_path):
         return None
 
     # Create temporary directory to dump contents into
-    temp_dir = os.path.join(os.path.dirname(output_path), 'temporary_qiime2_extraction')
+    temp_dir = os.path.join(os.path.dirname(out_dir), 'temporary_qiime2_extraction')
+
+    # Outfile path
+    out_file = os.path.join(out_dir, 'qiime2_data_extract.csv')
 
     try:
         os.mkdir(temp_dir)
@@ -199,15 +294,15 @@ def extract_family_csv(input_path, output_path):
 
     # Grab CSV
     qzv.export_data(temp_dir)
-    family_csv_path = os.path.join(temp_dir, 'level-5.csv')
+    taxonomic_csv_path = os.path.join(temp_dir, TAXONOMIC_DICT[TAXONOMIC_LEVEL][0]+'.csv')
 
     # Move file
-    os.rename(family_csv_path, output_path)
+    os.rename(taxonomic_csv_path, out_file)
 
     # Cleanup
     shutil.rmtree(temp_dir)
 
-    return output_path
+    return out_file
 
 
 # TODO: Implement taxonomic_level and filter
@@ -215,7 +310,9 @@ def extract_family_csv(input_path, output_path):
 @click.option('-i', '--input_file',
               type=click.Path(exists=True),
               required=True,
-              help='CSV file exported from taxonomy_barplot visualization (*.qzv)')
+              help='CSV file exported from taxonomy_barplot visualization (*.qzv). '
+                   'You can also just point to the *.qzv file, in which case the '
+                   'taxonomy level specified will be exported. Defaults to family-level.')
 @click.option('-o', '--out_dir',
               type=click.Path(exists=True),
               required=True,
@@ -229,18 +326,49 @@ def extract_family_csv(input_path, output_path):
 @click.option('-t', '--taxonomic_level',
               required=False,
               default="family",
-              help='Taxonomic level to generate pie charts from: ["phylum", "family", "genus", "species"]')
+              help='Taxonomic level to generate pie charts with. Defaults to "family". Options: '
+                   '["kingdom", "phylum", "class", "order", "family", "genus", "species"]')
 @click.option('-f', '--filtering',
               type=click.Path(exists=True),
               required=False,
-              help='Filter dataset to a single group (i.e. Enterobacteriaceae)')
+              help='Filter dataset to a single group (e.g. Enterobacteriaceae)')
 def cli(input_file, out_dir, sample_1, sample_2, taxonomic_level, filtering):
+    generate_color_pickle()
+
     # Quick validation
     if not os.path.isdir(out_dir):
         click.echo('ERROR: Provided parameter to [-o, --out_dir] is not a valid directory. Try again.')
         quit()
 
-    create_paired_pie_wrapper(input_file, out_dir, sample_1, sample_2)
+    # Global level variables. This is a hacky way of accomodating a few functions.
+    global TAXONOMIC_LEVEL
+    TAXONOMIC_LEVEL = taxonomic_level
+
+    global TAXONOMIC_DICT
+    TAXONOMIC_DICT = {
+        'kingdom': ('level-1', 'D_0__'),
+        'phylum': ('level-2', 'D_1__'),
+        'class': ('level-3', 'D_2__'),
+        'order': ('level-4', 'D_3__'),
+        'family': ('level-5', 'D_4__'),
+        'genus': ('level-6', 'D_5__'),
+        'species': ('level-7', 'D_6__'),
+    }
+
+
+    # Input file handling
+    if input_file.endswith('.csv'):
+        create_paired_pie_wrapper(input_file, out_dir, sample_1, sample_2)
+    elif input_file.endswith('.qzv'):
+        input_file = extract_viz_csv(input_path=input_file, out_dir=out_dir)
+        if input_file is None:
+            quit()
+        else:
+            create_paired_pie_wrapper(input_file, out_dir, sample_1, sample_2)
+    else:
+        click.echo('ERROR: Invalid input_file provided. Please ensure file is .csv or .qzv.')
+        quit()
+
     click.echo('Created chart at {} successfully'.format(out_dir))
 
 if __name__ == '__main__':
