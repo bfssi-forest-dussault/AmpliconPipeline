@@ -66,6 +66,7 @@ def prepare_df(filepath, index_col, filtering=None):
     """
     :param filepath:
     :param index_col:
+    :param filtering:
     :return:
     """
     df = pd.read_csv(filepath, index_col=index_col)
@@ -100,6 +101,7 @@ def fixed_df(filename, index='sample_annotation', filtering=None):
     """
     :param filename:
     :param index:
+    :param filtering:
     :return:
     """
     df = prepare_df(filepath=filename, index_col=index, filtering=filtering)
@@ -175,7 +177,8 @@ def style_wedges(wedges, colordict):
             wedge.set_facecolor(colordict[random.sample(list(colordict), 1)[0]])
 
 
-def generate_pct_labels(labels, values):
+def generate_pct_labels(values, labels):
+
     labels_values = zip(labels, values)
     pct_labels = []
     for label in labels_values:
@@ -187,17 +190,11 @@ def generate_pct_labels(labels, values):
     return pct_labels
 
 
-def paired_pie_charts(values1, labels1, explode1, sample1, values2, labels2, explode2, sample2, out_dir):
+def paired_multi_pie_charts(samples, out_dir, filtering):
     """
-    :param values1:
-    :param labels1:
-    :param explode1:
-    :param sample1:
-    :param values2:
-    :param labels2:
-    :param explode2:
-    :param sample2:
+    :param samples:
     :param out_dir:
+    :param filtering:
     :return:
     """
 
@@ -211,61 +208,70 @@ def paired_pie_charts(values1, labels1, explode1, sample1, values2, labels2, exp
     mpl.rcParams['font.size'] = 9.5
 
     # Setup figure canvas
-    fig = plt.figure(figsize=(24, 16))
-    fig.suptitle('16S Composition Comparison', fontsize=14, horizontalalignment='center', x=0.275, y=0.92)
+    plt.figure(figsize=(24, 16))
 
-    pct_labels1 = generate_pct_labels(labels1, values1)
-    pct_labels2 = generate_pct_labels(labels2, values2)
+    pct_labels_dict = {}
+    x_counter = 1
+    y_counter = 1
+    for sample, attributes in samples.items():
+        pct_labels_dict[sample] = generate_pct_labels(attributes[0], attributes[1])
 
-    # Plot pie charts
-    ax1 = plt.subplot2grid((3, 4), (0, 0))
+        ax = plt.subplot2grid((3, 4), (y_counter, x_counter))
 
-    # wedges1 = ax1.pie(values1, labels=labels1, autopct=supress_autopct, startangle=90, explode=explode1, shadow=False)
-    wedges1, labels1 = ax1.pie(values1, labels=labels1, startangle=90, explode=explode1, shadow=False)
+        wedges, labels = ax.pie(attributes[0], labels=attributes[1], explode=attributes[2],
+                                startangle=90, shadow=False)
 
-    # Label fix
-    for label, pct_label in zip(labels1, pct_labels1):
-        label.set_text(pct_label)
+        # Label fix
+        for label, pct_label in zip(labels, pct_labels_dict[sample]):
+            label.set_text(pct_label)
 
-    style_wedges(wedges=wedges1, colordict=colordict)
-    # ax1.legend(labels=pct_labels1)
+        style_wedges(wedges=wedges, colordict=colordict)
 
-    ax1.axis('equal')
-    plt.title(sample1)
+        ax.axis('equal')
+        plt.title(sample)
 
-    ax2 = plt.subplot2grid((3, 4), (0, 1))
+        if x_counter == 3:
+            x_counter = 1
+            y_counter += 1
+        else:
+            x_counter += 1
 
-    wedges2, labels2 = ax2.pie(values2, labels=labels2, startangle=90, explode=explode2, shadow=False)
+        if y_counter == 3:
+            y_counter = 1
 
-    # Label fix
-    for label, pct_label in zip(labels2, pct_labels2):
-        label.set_text(pct_label)
-
-    style_wedges(wedges=wedges2, colordict=colordict)
-    # ax2.legend(labels=pct_labels2)
-
-    ax2.axis('equal')
-    plt.title(sample2)
+    # Sloppy way of naming the files (removes the timepoint numbers). Revisit this.
+    prepend = None
+    for key in samples:
+        prepend = key.replace('0','').replace('2','').replace('4','')
+        break
 
     # Save
-    outfile = os.path.join(out_dir, '{}_{}_{}_plot.png'.format(sample1, sample2, TAXONOMIC_LEVEL.capitalize()))
+    if filtering is not None:
+        outfile = os.path.join(out_dir, '{}_[{}]_{}_plot.png'.format(prepend, filtering, TAXONOMIC_LEVEL.capitalize()))
+    else:
+        outfile = os.path.join(out_dir, '{}_{}_plot.png'.format(prepend, TAXONOMIC_LEVEL.capitalize()))
     plt.savefig(outfile, bbox_inches='tight')
+    return outfile
 
 
-def create_paired_pie_wrapper(filename, out_dir, sample1, sample2, filtering):
+def create_paired_pie_wrapper(filename, out_dir, samples, filtering):
     """
     :param filename:
     :param out_dir:
-    :param sample1:
-    :param sample2:
+    :param samples:
+    :param filtering:
     :return:
     """
     df = fixed_df(filename=filename, filtering=filtering)
-    (values1, labels1, explode1) = prepare_plot(df, sample1)
-    (values2, labels2, explode2) = prepare_plot(df, sample2)
-    paired_pie_charts(values1, labels1, explode1, sample1,
-                      values2, labels2, explode2, sample2,
-                      out_dir)
+
+    sample_dict = OrderedDict()
+    for sample in samples:
+        (values, labels, explode) = prepare_plot(df, sample)
+        sample_dict[sample] = (values, labels, explode)
+
+    filename = paired_multi_pie_charts(sample_dict, out_dir, filtering)
+
+    return filename
 
 
 def supress_autopct(pct):
@@ -323,6 +329,8 @@ def generate_color_pickle():
     colordict['Hafnia-Obesumbacterium'] = 'green'
     colordict['Enterobacteriales'] = 'lightblue'
     colordict['Unassigned'] = 'grey'
+    colordict['Escherichia-Shigella'] = 'pink'
+    colordict['D_4__Enterobacteriaceae'] = 'lightgreen'
 
     import pickle
     pickle.dump(colordict, open("taxonomic_color_dictionary.pickle", "wb"))
@@ -383,12 +391,10 @@ def extract_viz_csv(input_path, out_dir):
               type=click.Path(exists=True),
               required=True,
               help='Folder to save output file into')
-@click.option('-s1', '--sample_1',
-              required=True,
-              help='ID of first sample')
-@click.option('-s2', '--sample_2',
-              required=True,
-              help='ID of second sample')
+@click.option('-s', '--samples',
+              default=None,
+              help='List of samples to provide. Must be delimited by commas, e.g. -s SAMPLE1,SAMPLE2,SAMPLE3',
+              required=True)
 @click.option('-t', '--taxonomic_level',
               required=False,
               default="family",
@@ -397,7 +403,15 @@ def extract_viz_csv(input_path, out_dir):
 @click.option('-f', '--filtering',
               required=False,
               help='Filter dataset to a single group (e.g. Enterobacteriaceae)')
-def cli(input_file, out_dir, sample_1, sample_2, taxonomic_level, filtering):
+def cli(input_file, out_dir, samples, taxonomic_level, filtering):
+    generate_color_pickle()
+
+    if samples is not None:
+        samples = tuple(samples.split(','))
+
+        if len(samples) > 9:
+            print('ERROR: Cannot process more than 9 samples. Quitting.')
+            quit()
 
     # Quick validation
     if not os.path.isdir(out_dir):
@@ -419,21 +433,22 @@ def cli(input_file, out_dir, sample_1, sample_2, taxonomic_level, filtering):
         'species': ('level-7', 'D_6__'),
     }
 
+    filename = None
 
     # Input file handling
     if input_file.endswith('.csv'):
-        create_paired_pie_wrapper(input_file, out_dir, sample_1, sample_2, filtering)
+        filename = create_paired_pie_wrapper(input_file, out_dir, samples, filtering)
     elif input_file.endswith('.qzv'):
         input_file = extract_viz_csv(input_path=input_file, out_dir=out_dir)
         if input_file is None:
             quit()
         else:
-            create_paired_pie_wrapper(input_file, out_dir, sample_1, sample_2, filtering)
+            filename = create_paired_pie_wrapper(input_file, out_dir, samples, filtering)
     else:
         click.echo('ERROR: Invalid input_file provided. Please ensure file is .csv or .qzv.')
         quit()
 
-    click.echo('Created chart at {} successfully'.format(out_dir))
+    click.echo('Created chart at {} successfully'.format(filename))
 
 if __name__ == '__main__':
     cli()
