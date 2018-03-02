@@ -132,13 +132,13 @@ def prepare_plot(df, sampleid):
     :param sampleid:
     :return:
     """
-    labels = []
-    values = []
+
     ordered_dict = df.to_dict(into=OrderedDict)[sampleid]
     ordered_dict = OrderedDict(sorted(ordered_dict.items(), key=lambda x: x[1], reverse=True))
-    explode = [0 for x in range(len(ordered_dict))]
 
     # Set explodes (i.e. separation from the other wedges). This will take the top 3 wedges and explode them.
+    explode = [0 for x in range(len(ordered_dict))]
+
     explode[0] = 0.1
 
     try:
@@ -153,6 +153,8 @@ def prepare_plot(df, sampleid):
 
     explode = tuple(explode)
 
+    values = []
+    labels = []
     for key, value in ordered_dict.items():
         values.append(value)
         labels.append(key)
@@ -364,6 +366,7 @@ def generate_color_pickle():
     colordict['Unassigned'] = 'grey'
     colordict['Escherichia-Shigella'] = 'pink'
     colordict['D_4__Enterobacteriaceae'] = 'lightgreen'
+    colordict['D_3__Phaseolus acutifolius (tepary bean)'] = 'purple'
 
     import pickle
     pickle.dump(colordict, open("taxonomic_color_dictionary.pickle", "wb"))
@@ -437,7 +440,7 @@ def extract_viz_csv(input_path, out_dir):
               required=False,
               help='Filter dataset to a single group (e.g. Enterobacteriaceae)')
 def cli(input_file, out_dir, samples, taxonomic_level, filtering):
-    generate_color_pickle()
+    # generate_color_pickle()
 
     if samples is not None:
         samples = tuple(samples.split(','))
