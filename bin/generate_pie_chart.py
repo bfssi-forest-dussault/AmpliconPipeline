@@ -1,4 +1,5 @@
 import os
+import re
 import glob
 import click
 import pickle
@@ -137,7 +138,7 @@ def prepare_plot(df, sampleid):
     ordered_dict = OrderedDict(sorted(ordered_dict.items(), key=lambda x: x[1], reverse=True))
     explode = [0 for x in range(len(ordered_dict))]
 
-    # Set explodes
+    # Set explodes (i.e. separation from the other wedges). This will take the top 3 wedges and explode them.
     explode[0] = 0.1
 
     try:
@@ -152,13 +153,10 @@ def prepare_plot(df, sampleid):
 
     explode = tuple(explode)
 
-    # ONLY SHOW LABELS FOR VALUES > 2%. Any change here should be mirrored in my_autopct() as well!
     for key, value in ordered_dict.items():
         values.append(value)
-        if value > 2:
-            labels.append(key)
-        else:
-            labels.append('')
+        labels.append(key)
+
     return values, labels, explode
 
 
@@ -170,7 +168,7 @@ def style_wedges(wedges, colordict):
     """
     # Wedges
     for wedge in wedges:
-        # wedge.set_color('black')
+        # wedge.set_color('black') # This puts outlines around the wedges.
         try:
             wedge.set_facecolor(colordict[wedge.get_label()])
         except:
@@ -178,15 +176,18 @@ def style_wedges(wedges, colordict):
 
 
 def generate_pct_labels(values, labels):
-
+    """
+    This function takes the labels (i.e. taxonomy) and values (i.e. 50%) and creates new labels
+    with both pieces of information combined.
+    :param values:
+    :param labels:
+    :return:
+    """
     labels_values = zip(labels, values)
     pct_labels = []
     for label in labels_values:
         if label[0] != '':
             pct_labels.append(label[0] + '\n(%.2f' % label[1] + '%)')
-        else:
-            # pct_labels.append('')
-            pass
     return pct_labels
 
 
@@ -197,7 +198,6 @@ def paired_multi_pie_charts(samples, out_dir, filtering):
     :param filtering:
     :return:
     """
-
     # Style setup
     plt.style.use('fivethirtyeight')
 
@@ -210,26 +210,56 @@ def paired_multi_pie_charts(samples, out_dir, filtering):
     # Setup figure canvas
     plt.figure(figsize=(24, 16))
 
+    # Regex setup
+    reg_pattern = re.compile(r'^\D*(\d+(?:\.\d+)?)\D*$')
+
+    # Dictionary to store all labels for each sample
     pct_labels_dict = {}
+
+    # These counts control the positioning of pie charts on the grid
     x_counter = 1
     y_counter = 1
+
+    # Create a pie chart for every sample
     for sample, attributes in samples.items():
         pct_labels_dict[sample] = generate_pct_labels(attributes[0], attributes[1])
 
         ax = plt.subplot2grid((3, 4), (y_counter, x_counter))
 
+        # Create raw pie chart
         wedges, labels = ax.pie(attributes[0], labels=attributes[1], explode=attributes[2],
                                 startangle=90, shadow=False)
 
-        # Label fix
+        # Fix labels on the pie chart
         for label, pct_label in zip(labels, pct_labels_dict[sample]):
-            label.set_text(pct_label)
 
+            # This will allow for the regex to properly extract the value
+            pct_label_fix = pct_label
+            for x in range(6):
+                pct_label_fix = pct_label_fix.replace('D_{}__'.format(str(x)),'')
+
+            # Grab percentage value from string
+            try:
+                pct_value = float(re.findall(reg_pattern, pct_label_fix)[0])
+            except:
+                pct_value = 0
+
+            # Only show the label if it's value is >= 2%
+            if pct_value >= 2.00:
+                label.set_text(pct_label)
+            else:
+                label.set_text('')
+
+        # Make the wedges look nice
         style_wedges(wedges=wedges, colordict=colordict)
 
+        # Make sure pie chart is a circle
         ax.axis('equal')
+
+        # Add a title
         plt.title(sample)
 
+        # Grid logic for pie chart placement
         if x_counter == 3:
             x_counter = 1
             y_counter += 1
@@ -239,18 +269,21 @@ def paired_multi_pie_charts(samples, out_dir, filtering):
         if y_counter == 3:
             y_counter = 1
 
-    # Sloppy way of naming the files (removes the timepoint numbers). Revisit this.
-    prepend = None
+    # Sloppy way of naming the files. TODO: Revisit this.
+    prepend = ''
     for key in samples:
-        prepend = key.replace('0','').replace('2','').replace('4','')
-        break
+        prepend += key
+        prepend += '_'
 
-    # Save
+    # Set the filename
     if filtering is not None:
         outfile = os.path.join(out_dir, '{}_[{}]_{}_plot.png'.format(prepend, filtering, TAXONOMIC_LEVEL.capitalize()))
     else:
         outfile = os.path.join(out_dir, '{}_{}_plot.png'.format(prepend, TAXONOMIC_LEVEL.capitalize()))
+
+    # Save the file
     plt.savefig(outfile, bbox_inches='tight')
+
     return outfile
 
 
