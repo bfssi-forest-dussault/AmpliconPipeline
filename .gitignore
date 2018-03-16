@@ -1,0 +1,6 @@
+# Created by .ignore support plugin (hsz.mobi)
+.cache/
+.gitignore
+.idea/
+__pycache__/
+tests/sample_outdir/

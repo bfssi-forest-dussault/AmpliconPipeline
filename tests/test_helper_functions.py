@@ -6,8 +6,6 @@ parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.sys.path.insert(0, parentdir)
 
 
-
-
 def test_retrieve_fastqgz():
     assert len(retrieve_fastqgz('tests/sample_miseq')) == 4
 
