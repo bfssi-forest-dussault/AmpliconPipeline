@@ -28,12 +28,15 @@ def extract_taxonomy(value):
     except:
         tax_string = value
 
-    # Final cleanup
+    # Final cleanup. If there are remaining taxonomy characters it means a call to the specified level couldn't be made.
     if ';' in tax_string and '__' in tax_string:
-        for i in reversed(tax_string.split(';')):
-            if len(i) > 6:
-                tax_string = i
-                break
+        tax_string = 'Unclassified'
+        # This returns the highest level of ID for a taxon that QIIME could call rather than the full messy string
+        # Currently just have it returning 'Unclassified' because it's cleaner.
+        # for i in reversed(tax_string.split(';')):
+        #     if len(i) > 6:
+        #         tax_string = i
+        #         break
 
     return tax_string
 
@@ -189,7 +192,8 @@ def generate_pct_labels(values, labels):
     pct_labels = []
     for label in labels_values:
         if label[0] != '':
-            pct_labels.append(label[0] + '\n(%.2f' % label[1] + '%)')
+            # This determined if there is an integer or a float or whatever in the label. Change %i to %.2f for floats.
+            pct_labels.append(label[0] + '\n(%i' % label[1] + '%)')
     return pct_labels
 
 
@@ -203,34 +207,42 @@ def paired_multi_pie_charts(samples, out_dir, filtering):
     # Style setup
     plt.style.use('fivethirtyeight')
 
-    # Consistent colouring across taxonomy. e.g. Listeria will always be red
+    # Consistent colouring across taxonomy e.g. Listeria will always be red
     colordict = read_color_pickle()
 
     # Font size
-    mpl.rcParams['font.size'] = 9.5
+    mpl.rcParams['font.size'] = 9
 
     # Setup figure canvas
     plt.figure(figsize=(24, 16))
 
-    # Regex setup
+    # Regex setup -- grabs numeric value from string
     reg_pattern = re.compile(r'^\D*(\d+(?:\.\d+)?)\D*$')
 
     # Dictionary to store all labels for each sample
     pct_labels_dict = {}
 
-    # These counts control the positioning of pie charts on the grid
+    # Number of samples to figure out grid size
+    n_samples = len(samples)
+
+    # These counters control the positioning of pie charts on the grid
     x_counter = 1
     y_counter = 1
 
     # Create a pie chart for every sample
     for sample, attributes in samples.items():
+        # print('Generating plot for {}'.format(sample))
         pct_labels_dict[sample] = generate_pct_labels(attributes[0], attributes[1])
 
-        ax = plt.subplot2grid((3, 4), (y_counter, x_counter))
+        # Grid position for plot
+        if n_samples == 4: # TODO: THIS DOESN'T WORK. SHOULD BE A 2x2 GRID!
+            ax = plt.subplot2grid((2, 4), (y_counter, x_counter))
+        elif n_samples == 6:
+            ax = plt.subplot2grid((3, 4), (y_counter, x_counter))
 
         # Create raw pie chart
         wedges, labels = ax.pie(attributes[0], labels=attributes[1], explode=attributes[2],
-                                startangle=90, shadow=False)
+                                startangle=80, shadow=False)
 
         # Fix labels on the pie chart
         for label, pct_label in zip(labels, pct_labels_dict[sample]):
@@ -238,7 +250,7 @@ def paired_multi_pie_charts(samples, out_dir, filtering):
             # This will allow for the regex to properly extract the value
             pct_label_fix = pct_label
             for x in range(6):
-                pct_label_fix = pct_label_fix.replace('D_{}__'.format(str(x)),'')
+                pct_label_fix = pct_label_fix.replace('D_{}__'.format(str(x)), '')
 
             # Grab percentage value from string
             try:
@@ -247,29 +259,39 @@ def paired_multi_pie_charts(samples, out_dir, filtering):
                 pct_value = 0
 
             # Only show the label if it's value is >= 2%
-            if pct_value >= 2.00:
+            if pct_value >= 2:
                 label.set_text(pct_label)
             else:
                 label.set_text('')
 
-        # Make the wedges look nice
+        # Make the wedges look nice with a fixed color
         style_wedges(wedges=wedges, colordict=colordict)
 
         # Make sure pie chart is a circle
         ax.axis('equal')
 
-        # Add a title
+        # Add title
         plt.title(sample)
 
-        # Grid logic for pie chart placement
-        if x_counter == 3:
-            x_counter = 1
-            y_counter += 1
-        else:
-            x_counter += 1
+        # Increment grid logic for pie chart placement
+        if n_samples == 6:
+            if x_counter == 3:
+                x_counter = 1
+                y_counter += 1
+            else:
+                x_counter += 1
 
-        if y_counter == 3:
-            y_counter = 1
+            if y_counter == 3:
+                y_counter = 1
+
+        elif n_samples == 4:
+            if x_counter == 3:
+                x_counter = 1
+                y_counter += 1
+            else:
+                x_counter += 1
+            if y_counter == 3:
+                y_counter = 1
 
     # Sloppy way of naming the files. TODO: Revisit this.
     prepend = ''
@@ -283,7 +305,7 @@ def paired_multi_pie_charts(samples, out_dir, filtering):
     else:
         outfile = os.path.join(out_dir, '{}_{}_plot.png'.format(prepend, TAXONOMIC_LEVEL.capitalize()))
 
-    # Save the file
+    # Save the file (set transparent=True if you want to eliminate the background)
     plt.savefig(outfile, bbox_inches='tight')
 
     return outfile
@@ -318,10 +340,15 @@ def my_autopct(pct):
     :param pct:
     :return:
     """
+    # Only return a label if it is > 2% else return an empty string
     return (('%.2f' % pct) + '%') if pct > 2 else ''
 
 
 def get_spaced_colors(n):
+    """
+    :param n:
+    :return: list of n colors in RGB
+    """
     max_value = 16581375  # 255**3
     interval = int(max_value / n)
     colors = [hex(I)[2:].zfill(6) for I in range(0, max_value, interval)]
@@ -354,16 +381,17 @@ def generate_color_pickle():
 
     len(filtered_mega_tax)
 
-    thing = get_spaced_colors(len(filtered_mega_tax))
+    colors = get_spaced_colors(len(filtered_mega_tax))
 
     colordict = {}
-    for l, c in zip(filtered_mega_tax, thing):
+    for l, c in zip(filtered_mega_tax, colors):
         colordict[l] = c
 
     # manual additions
     colordict['Hafnia-Obesumbacterium'] = 'green'
     colordict['Enterobacteriales'] = 'lightblue'
     colordict['Unassigned'] = 'grey'
+    colordict['Unclassified'] = 'grey'
     colordict['Escherichia-Shigella'] = 'pink'
     colordict['D_4__Enterobacteriaceae'] = 'lightgreen'
     colordict['D_3__Phaseolus acutifolius (tepary bean)'] = 'purple'
@@ -485,6 +513,7 @@ def cli(input_file, out_dir, samples, taxonomic_level, filtering):
         quit()
 
     click.echo('Created chart at {} successfully'.format(filename))
+
 
 if __name__ == '__main__':
     cli()
