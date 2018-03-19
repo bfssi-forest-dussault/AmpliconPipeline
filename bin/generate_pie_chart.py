@@ -234,10 +234,12 @@ def paired_multi_pie_charts(samples, out_dir, filtering):
         # print('Generating plot for {}'.format(sample))
         pct_labels_dict[sample] = generate_pct_labels(attributes[0], attributes[1])
 
-        # Grid position for plot
-        if n_samples == 4: # TODO: THIS DOESN'T WORK. SHOULD BE A 2x2 GRID!
-            ax = plt.subplot2grid((2, 4), (y_counter, x_counter))
+        # Grid position for plot depending on n_samples
+        if n_samples == 4:
+            ax = plt.subplot2grid((4, 4), (y_counter, x_counter))
         elif n_samples == 6:
+            ax = plt.subplot2grid((3, 4), (y_counter, x_counter))
+        elif n_samples < 4:
             ax = plt.subplot2grid((3, 4), (y_counter, x_counter))
 
         # Create raw pie chart
@@ -285,13 +287,13 @@ def paired_multi_pie_charts(samples, out_dir, filtering):
                 y_counter = 1
 
         elif n_samples == 4:
-            if x_counter == 3:
+            if x_counter == 2:
                 x_counter = 1
                 y_counter += 1
             else:
                 x_counter += 1
-            if y_counter == 3:
-                y_counter = 1
+        elif n_samples < 4:
+            x_counter += 1
 
     # Sloppy way of naming the files. TODO: Revisit this.
     prepend = ''
