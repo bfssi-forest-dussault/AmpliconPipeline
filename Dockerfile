@@ -5,6 +5,9 @@ MAINTAINER Forest Dussault <forest.dussault@inspection.gc.ca>
 
 ENV DEBIAN_FRONTEND noninteractive
 
+# Building the image
+# docker build -t "ampliconpipeline:v0.9"
+
 # Install packages
 RUN apt-get update -y -qq && apt-get install -y \
 	python-dev \
@@ -37,7 +40,11 @@ RUN git clone https://github.com/forestdussault/AmpliconPipeline.git
 WORKDIR /home/ubuntu/AmpliconPipeline
 RUN conda create --name AmpliconPipeline --file requirements.txt
 
+# Retrieve the classifier
+RUN mkdir /home/ubuntu/AmpliconPipeline/classifiers
+RUN curl -L https://ndownloader.figshare.com/files/10970087 -o classifiers/99_V3V4_Silva_naive_bayes_classifier.qza
+
 # Set the language to use utf-8 encoding
 ENV LANG C.UTF-8
 
-#CMD /bin/bash -c "source activate cowbat && assembly_pipeline.py /mnt/scratch/test/sequences -r /mnt/nas/assemblydatabases/0.2.1/databases"
+CMD /bin/bash -c "source activate AmpliconPipeline"
