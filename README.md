@@ -46,12 +46,6 @@ Options:
                                NOT already exist.  [required]
   -m, --metadata PATH          Path to QIIME2 tab-separated metadata file.
                                This must be a *.tsv file.  [required]
-  -eq, --evaluate_quality      Setting this flag will only run the pipeline up
-                               until generating the demux_summary.qzv file.
-                               This is important to do before running the
-                               pipeline to establish acceptable
-                               trimming/truncation parameters to pass to
-                               dada2.
   -c, --classifier PATH        Path to a QIIME2 Classifier Artifact. By
                                default this will point to a previously trained
                                V3-V4 classifier using SILVA taxonomy.
@@ -60,6 +54,12 @@ Options:
                                testing/optimizing trimming parameters for a
                                full run, or for generating files to be merged
                                for later analysis.
+  -eq, --evaluate_quality      Setting this flag will only run the pipeline up
+                               until generating the demux_summary.qzv file.
+                               This is important to do before running the
+                               pipeline to establish acceptable
+                               trimming/truncation parameters to pass to
+                               dada2.
   -tlf, --trim_left_f INTEGER  Trim n bases from the 5' end of the forward
                                reads. Defaults to 10.
   -tlr, --trim_left_r INTEGER  Trim n bases from the 5' end of the reverse
