@@ -39,27 +39,37 @@ python cli.py --help
 Usage: cli.py [OPTIONS]
 
 Options:
-  -i, --inputdir PATH      Directory containing your raw MiSeq output (files
-                           must be *.fastq.gz)  [required]
-  -o, --outdir PATH        Base directory for all output from
-                           AmpliconPipeline. Note that this directory must NOT
-                           already exist.  [required]
-  -m, --metadata PATH      Path to QIIME2 tab-separated metadata file. This
-                           must be a *.tsv file.  [required]
-  -eq, --evaluate_quality  Setting this flag will only run the pipeline up
-                           until generating the demux_summary.qzv file. This
-                           is important to do before running the pipeline to
-                           establish acceptable trimming/truncation parameters
-                           to pass to dada2.
-  -c, --classifier PATH    Path to a QIIME2 Classifier Artifact. By default
-                           this will point to a previously trained V3-V4
-                           classifier using SILVA taxonomy.
-  -f, --filtering_flag     Set flag to only proceed to the filtering step of
-                           analysis. This is useful for testing/optimizing
-                           trimming parameters for a full run, or for
-                           generating files to be merged for later analysis.
-  -v, --verbose            Set this flag to enable more verbose output.
-  --help                   Show this message and exit.
+  -i, --inputdir PATH          Directory containing your raw MiSeq output
+                               (files must be *.fastq.gz)  [required]
+  -o, --outdir PATH            Base directory for all output from
+                               AmpliconPipeline. Note that this directory must
+                               NOT already exist.  [required]
+  -m, --metadata PATH          Path to QIIME2 tab-separated metadata file.
+                               This must be a *.tsv file.  [required]
+  -eq, --evaluate_quality      Setting this flag will only run the pipeline up
+                               until generating the demux_summary.qzv file.
+                               This is important to do before running the
+                               pipeline to establish acceptable
+                               trimming/truncation parameters to pass to
+                               dada2.
+  -c, --classifier PATH        Path to a QIIME2 Classifier Artifact. By
+                               default this will point to a previously trained
+                               V3-V4 classifier using SILVA taxonomy.
+  -f, --filtering_flag         Set flag to only proceed to the filtering step
+                               of analysis. This is useful for
+                               testing/optimizing trimming parameters for a
+                               full run, or for generating files to be merged
+                               for later analysis.
+  -tlf, --trim_left_f INTEGER  Trim n bases from the 5' end of the forward
+                               reads. Defaults to 10.
+  -tlr, --trim_left_r INTEGER  Trim n bases from the 5' end of the reverse
+                               reads. Defaults to 10.
+  -trf, --trunc_len_f INTEGER  Truncate the forward reads to n bases. Defaults
+                               to 290.
+  -trr, --trunc_len_r INTEGER  Truncate the reverse reads to n bases. Defaults
+                               to 290.
+  -v, --verbose                Set this flag to enable more verbose output.
+  --help                       Show this message and exit.
 ```
 
 
@@ -87,7 +97,7 @@ flag provided to **cli.py**. The relevant output file is listed at the end of ea
     4. Generate a phylogenetic tree (`rooted-tree.qza`, `unrooted-tree.qza`)
     5. Generate alpha rarefaction curves (`alpha-rarefaction.qzv`)
     6. Conduct taxonomic analysis (`taxonomy.qzv`, `taxonomy.qza`)
-    7. Generate taxonomy barplots (`taxonomy_barplot.qzv`)
+    7. Generate taxonomy barplot (`taxonomy_barplot.qzv`)
     8. Run diversity metrics (`bray_curtis_emperor.qzv`,
     `evenness-group-significance.qzv`,
     `faith-pd-group-significance.qzv`,
