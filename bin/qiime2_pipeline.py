@@ -71,8 +71,8 @@ def visualize_demux(base_dir, data_artifact):
 
 # TODO: Allow these trimming parameters to be adjusted from cli.py
 def dada2_qc(base_dir, demultiplexed_seqs,
-             trim_left_f=18, trim_left_r=8, trunc_len_f=280, trunc_len_r=245, max_ee=3,
-             chimera_method='consensus', cpu_count=None):
+             trim_left_f, trim_left_r, trunc_len_f, trunc_len_r,
+             max_ee=3, chimera_method='consensus', cpu_count=None):
     """
     :param base_dir: Main working directory filepath
     :param demultiplexed_seqs:
@@ -480,17 +480,17 @@ def validate_metadata(base_dir, sample_metadata_path):
     return new_metadata_path
 
 
-def run_pipeline(base_dir, data_artifact_path, sample_metadata_path, classifier_artifact_path, filtering_flag=False):
+def run_pipeline(base_dir, data_artifact_path, sample_metadata_path, classifier_artifact_path,
+                 trim_left_f, trim_left_r, trunc_len_f, trunc_len_r, filtering_flag=False):
     """
-    1. Loads qiime2 generated data artifact and sample metadata file into a qiime2 artifact
-    2. Filters, denoises reads with dada2
+    1. Load sequence data and sample metadata file into a QIIME 2 Artifact
+    2. Filter, denoise reads with dada2
     3. Multiple sequence alignment and masking of highly variable regions
     4. Generate a phylogenetic tree
-    5. Load an existing qiime2 classifier artifact
-    6. Generate alpha rarefaction curves
-    7. Conduct taxonomic analysis
-    8. Generate taxonomy barplots
-    9. Run diversity metrics
+    5. Generate alpha rarefaction curves
+    6. Conduct taxonomic analysis
+    7. Generate taxonomy barplots
+    8. Run diversity metrics
 
     :param base_dir: Main working directory filepath
     :param data_artifact_path:
@@ -515,7 +515,10 @@ def run_pipeline(base_dir, data_artifact_path, sample_metadata_path, classifier_
 
     # Filter & denoise w/dada2
     (dada2_filtered_table, dada2_filtered_rep_seqs) = dada2_qc(base_dir=base_dir,
-                                                               demultiplexed_seqs=data_artifact)
+                                                               demultiplexed_seqs=data_artifact,
+                                                               trim_left_f=trim_left_f, trim_left_r=trim_left_r,
+                                                               trunc_len_f=trunc_len_f, trunc_len_r=trunc_len_r
+                                                               )
     # Visualize dada2
     feature_table_summary = visualize_dada2(base_dir=base_dir,
                                             dada2_filtered_table=dada2_filtered_table,

@@ -7,6 +7,11 @@ from bin import helper_functions
 from bin import qiime2_pipeline
 
 
+"""
+trim_left_f=18, trim_left_r=8, trunc_len_f=280, trunc_len_r=245
+"""
+
+
 # TODO: Implement trimming parameters as click options
 @click.command()
 @click.option('-i', '--inputdir',
@@ -39,12 +44,25 @@ from bin import qiime2_pipeline
               default=False,
               help='Set flag to only proceed to the filtering step of analysis. This is useful for testing/optimizing '
                    'trimming parameters for a full run, or for generating files to be merged for later analysis.')
+@click.option('-tlf', '--trim_left_f',
+              default=10,
+              help='Trim n bases from the 5\' end of the forward reads. Defaults to 10.')
+@click.option('-tlr', '--trim_left_r',
+              default=10,
+              help='Trim n bases from the 5\' end of the reverse reads. Defaults to 10.')
+@click.option('-trf', '--trunc_len_f',
+              default=290,
+              help='Truncate the forward reads to n bases. Defaults to 290.')
+@click.option('-trr', '--trunc_len_r',
+              default=290,
+              help='Truncate the reverse reads to n bases. Defaults to 290.')
 @click.option('-v', '--verbose',
               is_flag=True,
               default=False,
               help='Set this flag to enable more verbose output.')
 @click.pass_context
-def cli(ctx, inputdir, outdir, metadata, classifier, evaluate_quality, filtering_flag, verbose):
+def cli(ctx, inputdir, outdir, metadata, classifier, evaluate_quality, filtering_flag,
+        trim_left_f, trim_left_r, trunc_len_f, trunc_len_r, verbose):
     # Logging setup
     if verbose:
         logging.basicConfig(
@@ -92,10 +110,13 @@ def cli(ctx, inputdir, outdir, metadata, classifier, evaluate_quality, filtering
                                  data_artifact_path=data_artifact_path,
                                  sample_metadata_path=metadata,
                                  classifier_artifact_path=classifier,
-                                 filtering_flag=filtering_flag)
+                                 filtering_flag=filtering_flag,
+                                 trim_left_f=trim_left_f, trim_left_r=trim_left_r,
+                                 trunc_len_f=trunc_len_f, trunc_len_r=trunc_len_r)
     logging.info('\nQIIME2 Pipeline Completed')
     ctx.exit()
 
 
 if __name__ == '__main__':
     cli()
+
