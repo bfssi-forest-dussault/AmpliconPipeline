@@ -27,12 +27,6 @@ trim_left_f=18, trim_left_r=8, trunc_len_f=280, trunc_len_r=245
               type=click.Path(exists=True),
               required=True,
               help='Path to QIIME2 tab-separated metadata file. This must be a *.tsv file.')
-@click.option('-eq', '--evaluate_quality',
-              is_flag=True,
-              default=False,
-              help='Setting this flag will only run the pipeline up until generating the demux_summary.qzv file. '
-                   'This is important to do before running the pipeline to establish acceptable trimming/truncation '
-                   'parameters to pass to dada2.')
 @click.option('-c', '--classifier',
               type=click.Path(exists=True),
               default='./classifiers/99_V3V4_Silva_naive_bayes_classifier.qza',  # TODO: test if this works
@@ -44,6 +38,12 @@ trim_left_f=18, trim_left_r=8, trunc_len_f=280, trunc_len_r=245
               default=False,
               help='Set flag to only proceed to the filtering step of analysis. This is useful for testing/optimizing '
                    'trimming parameters for a full run, or for generating files to be merged for later analysis.')
+@click.option('-eq', '--evaluate_quality',
+              is_flag=True,
+              default=False,
+              help='Setting this flag will only run the pipeline up until generating the demux_summary.qzv file. '
+                   'This is important to do before running the pipeline to establish acceptable trimming/truncation '
+                   'parameters to pass to dada2.')
 @click.option('-tlf', '--trim_left_f',
               default=10,
               help='Trim n bases from the 5\' end of the forward reads. Defaults to 10.')
