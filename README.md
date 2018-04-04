@@ -8,39 +8,61 @@ internally within the OLC R&D division.
 
 ### Installation Instructions
 
-#### Dependencies
+The OLCAmpliconPipeline is distributed as a Docker image.
+As a result, an installation of Docker is the only dependency.
 
-OLCAmpliconPipeline has dependencies on the following:
+To retrieve the Docker image:
+```
+docker pull forestdussault/ampliconpipeline:v0.9
+```
 
-- QIIME 2 (v2017.11): _https://docs.qiime2.org/2017.11/install/native/_
+### Running the pipeline
+1. Interactively enter the AmpliconPipeline container
+```
+docker run -it --rm -v path/to/your/data:path/to/your/data ampliconpipeline:v0.9
+```
 
-In order to run this pipeline, the QIIME 2 conda environment must be activated.
+2. Source the conda environment
+```
+source activate AmpliconPipeline
+```
 
-i.e. `source activate qiime2-2017.11`
+3. Get started with the following:
+```
+python cli.py --help
+```
 
-#### Download And Installation
 
-To download this repository, use: `git clone https://github.com/forestdussault/AmpliconPipeline.git`
+### Command Line Arguments
 
-Executable scripts are found in `bin/`.
+```
+Usage: cli.py [OPTIONS]
+
+Options:
+  -i, --inputdir PATH      Directory containing your raw MiSeq output (i.e.
+                           *.fastq.gz files)  [required]
+  -o, --outdir PATH        Base directory for all output from
+                           AmpliconPipeline. Note that this directory must not
+                           already exist  [required]
+  -m, --metadata PATH      Path to QIIME2 tab-separated metadata file. This
+                           file must have the .tsv extension.  [required]
+  -eq, --evaluate_quality  Setting this flag will only run the pipeline up
+                           until generating the demux_summary.qzv file. This
+                           is important to do before running the pipeline to
+                           establish acceptable trimming/truncation parameters
+                           to pass to dada2.
+  -c, --classifier PATH    Path to QIIME2 Classifier Artifact
+  -f, --filtering_flag     Set flag to only proceed to the filtering step of
+                           analysis. This is useful for testing/optimizing
+                           trimming parameters for a full run, or for
+                           generating files to be merged for later analysis.
+  -v, --verbose            Set flag to enable more verbose output
+  --help                   Show this message and exit.
+
+```
 
 ### Tests and Example Data
 
 Basic tests can be found in `tests/`.
 
 To run these tests, use: `pytest`
-
-### Command Line Arguments
-
-```
---inputdir
-    Directory containing your raw MiSeq output (i.e. *.fastq.gz files)
---outdir
-    Base directory for all output from AmpliconPipeline. Note that this directory must not already exist.
---metadata
-    Path to existing QIIME2 tab-separated metadata file
---classifier
-    Path to existing QIIME2 Classifier Artifact.
---verbose
-    Set flag to enable more verbose output
-```
