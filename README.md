@@ -1,4 +1,4 @@
-# OLCAmpliconPipeline *(WIP)*
+# AmpliconPipeline
 
 ### Description
 
@@ -8,7 +8,7 @@ internally within the OLC R&D division.
 
 ### Installation Instructions
 
-The OLCAmpliconPipeline is distributed as a Docker image.
+The AmpliconPipeline is distributed as a Docker image.
 As a result, an installation of Docker is the only dependency.
 
 To retrieve the Docker image:
