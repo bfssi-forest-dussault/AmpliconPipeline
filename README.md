@@ -62,15 +62,54 @@ Options:
   --help                   Show this message and exit.
 ```
 
-### Tests and Example Data
 
-Basic tests can be found in `tests/`.
+### Usage notes
+#### Output
+- Symlinks to the provided raw data will be created at `outdir/data`
+- All QIIME 2 output will be available in `outdir/qiime2`
 
-To run these tests, use: `pytest`
+#### Metadata
+A valid tab delimited metadata file must be provided to run the AmpliconPipeline.
+An example of one using the standard OLC format is provided in the root
+of this repository (**sample_metadata.tsv**).
 
-### Other notes
+The only field that is
+absolutely required is `#SampleID`, though downstream analysis is
+dependent on having detailed metadata available.
+
+#### Flags & Output Details
+There are three separate paths the pipeline can take depending on the
+flag provided to **cli.py**. The relevant output file is listed at the end of each step.
+1. Standard
+    1. Load sequence data and sample metadata file into a QIIME 2 Artifact (`paired-sample-data.qza`)
+    2. Filter, denoise reads with dada2 (`table-dada2-summary.qzv`)
+    3. Multiple sequence alignment and masking of highly variable regions (`masked-aligned-rep-seqs.qza`)
+    4. Generate a phylogenetic tree (`rooted-tree.qza`, `unrooted-tree.qza`)
+    5. Generate alpha rarefaction curves (`alpha-rarefaction.qzv`)
+    6. Conduct taxonomic analysis (`taxonomy.qzv`, `taxonomy.qza`)
+    7. Generate taxonomy barplots (`taxonomy_barplot.qzv`)
+    8. Run diversity metrics (`bray_curtis_emperor.qzv`,
+    `evenness-group-significance.qzv`,
+    `faith-pd-group-significance.qzv`,
+    `jaccard_emperor.qzv`)
+2. Evaluate quality (`-eq`, `--evaluate_quality`)
+    1. Load sequence data and sample metadata file into a QIIME 2 Artifact (`paired-sample-data.qza`)
+    2. Produce data quality visualization `demux_summary.qzv`
+3. Filtering flag (`-f`, `--filtering_flag`)
+    1. Load sequence data and sample metadata file into a QIIME 2 Artifact (`paired-sample-data.qza`)
+    2. Filter, denoise reads with dada2 (`table-dada2-summary.qzv`)
+
+#### Viewing data
+All `.qzv` and `.qza` output files are viewable at https://view.qiime2.org/
+
 #### Classifier
 By default, this pipeline uses a pre-trained classifier using the V3-V4 region.
 
 The classifier and some additional details can be retrieved here:
 https://figshare.com/articles/99_V3V4_Silva_naive_bayes_classifier_qza/6087197
+
+### Tests and Example Data
+
+Basic tests can be found in `tests/`.
+
+To run these tests, use: `pytest`
