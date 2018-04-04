@@ -12,16 +12,16 @@ from bin import qiime2_pipeline
 @click.option('-i', '--inputdir',
               type=click.Path(exists=True),
               required=True,
-              help='Directory containing your raw MiSeq output (i.e. *.fastq.gz files)')
+              help='Directory containing your raw MiSeq output (files must be *.fastq.gz)')
 @click.option('-o', '--outdir',
               type=click.Path(exists=False),
               required=True,
               help='Base directory for all output from AmpliconPipeline. '
-                   'Note that this directory must not already exist')
+                   'Note that this directory must NOT already exist.')
 @click.option('-m', '--metadata',
               type=click.Path(exists=True),
               required=True,
-              help='Path to QIIME2 tab-separated metadata file. This file must have the .tsv extension.')
+              help='Path to QIIME2 tab-separated metadata file. This must be a *.tsv file.')
 @click.option('-eq', '--evaluate_quality',
               is_flag=True,
               default=False,
@@ -32,7 +32,8 @@ from bin import qiime2_pipeline
               type=click.Path(exists=True),
               default='./classifiers/99_V3V4_Silva_naive_bayes_classifier.qza',  # TODO: test if this works
               required=False,
-              help='Path to QIIME2 Classifier Artifact')
+              help='Path to a QIIME2 Classifier Artifact. By default this will point to a previously trained '
+                   'V3-V4 classifier using SILVA taxonomy.')
 @click.option('-f', '--filtering_flag',
               is_flag=True,
               default=False,
@@ -41,7 +42,7 @@ from bin import qiime2_pipeline
 @click.option('-v', '--verbose',
               is_flag=True,
               default=False,
-              help='Set flag to enable more verbose output')
+              help='Set this flag to enable more verbose output.')
 @click.pass_context
 def cli(ctx, inputdir, outdir, metadata, classifier, evaluate_quality, filtering_flag, verbose):
     # Logging setup
