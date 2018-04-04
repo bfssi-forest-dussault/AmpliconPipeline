@@ -1,12 +1,13 @@
  #!/usr/bin/env python3
 
 import logging
-import os
 import click
+import os
 from bin import helper_functions
 from bin import qiime2_pipeline
 
 
+# TODO: Implement trimming parameters as click options
 @click.command()
 @click.option('-i', '--inputdir',
               type=click.Path(exists=True),
@@ -20,8 +21,8 @@ from bin import qiime2_pipeline
 @click.option('-m', '--metadata',
               type=click.Path(exists=True),
               required=True,
-              help='Path to QIIME2 tab-separated metadata file. This file have the .tsv extension.')
-@click.option('-eq','--evaluate_quality',
+              help='Path to QIIME2 tab-separated metadata file. This file must have the .tsv extension.')
+@click.option('-eq', '--evaluate_quality',
               is_flag=True,
               default=False,
               help='Setting this flag will only run the pipeline up until generating the demux_summary.qzv file. '
@@ -29,12 +30,14 @@ from bin import qiime2_pipeline
                    'parameters to pass to dada2.')
 @click.option('-c', '--classifier',
               type=click.Path(exists=True),
+              default='./classifiers/99_V3V4_Silva_naive_bayes_classifier.qza',  # TODO: test if this works
               required=False,
               help='Path to QIIME2 Classifier Artifact')
 @click.option('-f', '--filtering_flag',
               is_flag=True,
               default=False,
-              help='Set flag to only proceed to the filtering step of analysis')
+              help='Set flag to only proceed to the filtering step of analysis. This is useful for testing/optimizing '
+                   'trimming parameters for a full run, or for generating files to be merged for later analysis.')
 @click.option('-v', '--verbose',
               is_flag=True,
               default=False,
@@ -72,7 +75,7 @@ def cli(ctx, inputdir, outdir, metadata, classifier, evaluate_quality, filtering
     if os.path.isdir(outdir):
         click.echo(ctx.get_help(), err=True)
         click.echo('\nERROR: Specified output directory already exists. '
-                      'Please provide a new path that does not already exist.', err=True)
+                   'Please provide a new path that does not already exist.', err=True)
         ctx.exit()
 
     # Project setup + get path to data artifact
@@ -80,7 +83,7 @@ def cli(ctx, inputdir, outdir, metadata, classifier, evaluate_quality, filtering
 
     # Filtering flag
     if filtering_flag:
-        logging.info('FILTERING_FLAG SET. Pipeline will only proceed to DADA2 step.')
+        logging.info('FILTERING_FLAG SET. Pipeline will only proceed to DADA2 filtering step.')
 
     # Run the full pipeline
     logging.info('Starting QIIME2 Pipeline with output routing to {}'.format(outdir))

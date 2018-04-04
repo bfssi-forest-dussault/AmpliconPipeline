@@ -69,7 +69,7 @@ def visualize_demux(base_dir, data_artifact):
     return demux_viz
 
 
-# RUN 1 PARAMS
+# TODO: Allow these trimming parameters to be adjusted from cli.py
 def dada2_qc(base_dir, demultiplexed_seqs,
              trim_left_f=18, trim_left_r=8, trunc_len_f=280, trunc_len_r=245, max_ee=3,
              chimera_method='consensus', cpu_count=None):
@@ -80,6 +80,7 @@ def dada2_qc(base_dir, demultiplexed_seqs,
     :param trim_left_r:
     :param trunc_len_f:
     :param trunc_len_r:
+    :param max_ee: number of errors allowed before rejecting a read
     :param chimera_method:
     :param cpu_count:
     :return: qiime2/dada2 filtered table and representative sequences objects
@@ -188,7 +189,7 @@ def phylo_tree(base_dir, seq_mask):
 def export_newick(base_dir, tree):
     """
     :param base_dir: Main working directory filepath
-    :param tree: 
+    :param tree: QIIME2 tree object
     :return: path to tree file in newick format exported from the tree object
     """
     # Path setup
@@ -213,6 +214,7 @@ def load_classifier_artifact(classifier_artifact_path):
 
 def calculate_maximum_depth(dada2_table):
     """
+    Extracts the maximum observed read depth from post-filtering sequence object
     :param dada2_table:
     :return: maximum depth retrieved from the qiime2/dada2 table object
     """
@@ -231,6 +233,7 @@ def calculate_maximum_depth(dada2_table):
 
 def alpha_rarefaction_visualization(base_dir, dada2_filtered_table, max_depth=None):
     """
+    Produces rarefaction visualization object
     :param base_dir: Main working directory filepath
     :param dada2_filtered_table: 
     :param max_depth: 
@@ -256,9 +259,11 @@ def alpha_rarefaction_visualization(base_dir, dada2_filtered_table, max_depth=No
 
 def classify_taxonomy(base_dir, dada2_filtered_rep_seqs, classifier, cpu_count=None):
     """
+    Uses a provided trained classifier object to classify reads by taxonomy
     :param base_dir: Main working directory filepath
     :param dada2_filtered_rep_seqs: 
     :param classifier: 
+    :param cpu_count:
     :return: qiime2 post-classification taxonomy object
     """
     # Path setup
@@ -323,7 +328,7 @@ def run_diversity_metrics(base_dir, dada2_filtered_table, phylo_rooted_tree, met
     """
     logging.info('Attempting to calculate diversity metrics')
 
-    # Set sampling_depth to 10% of the maximum if no value is provided. Should rework how this value is generated.
+    # Set sampling_depth to 10% of the maximum if no value is provided. Should probably rework this.
     if sampling_depth is None:
         sampling_depth = int(calculate_maximum_depth(dada2_filtered_table) * 0.1)
 
@@ -388,6 +393,12 @@ def run_diversity_metrics(base_dir, dada2_filtered_table, phylo_rooted_tree, met
 def train_feature_classifier(base_dir, otu_filepath, reference_taxonomy_filepath, f_primer=None, r_primer=None):
     """
     Trains a Naive Bayes classifier based on a reference database/taxonomy
+
+    Primers for V3-V4 region:
+    F: S-D-Bact-0341-b-S-17, 5′-CCTACGGGNGGCWGCAG-3′,
+    R: S-D-Bact-0785-a-A-21, 5′-GACTACHVGGGTATCTAATCC-3
+    https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3592464/
+
     :param base_dir: Main working directory filepath
     :param otu_filepath: File path to reference OTU .qza file
     :param reference_taxonomy_filepath: File path to reference taxonomy .qza file
@@ -457,7 +468,7 @@ def validate_sample_id(sample_id):
 
 def write_new_metadata(df, sample_metadata_path):
     new_metadata_path = os.path.join(os.path.dirname(sample_metadata_path),
-                                     os.path.basename(sample_metadata_path).replace('.tsv','_Validated.tsv'))
+                                     os.path.basename(sample_metadata_path).replace('.tsv', '_Validated.tsv'))
     df.to_csv(new_metadata_path, sep='\t', index=None)
     return new_metadata_path
 
@@ -485,6 +496,7 @@ def run_pipeline(base_dir, data_artifact_path, sample_metadata_path, classifier_
     :param data_artifact_path:
     :param sample_metadata_path:
     :param classifier_artifact_path:
+    :param filtering_flag:
     """
     # Load seed object
     data_artifact = load_data_artifact(data_artifact_path)
@@ -511,7 +523,7 @@ def run_pipeline(base_dir, data_artifact_path, sample_metadata_path, classifier_
                                             metadata_object=metadata_object)
 
     # Only do these steps if the filtering_flag is false
-    if filtering_flag == False:
+    if filtering_flag is False:
         # Mask and alignment
         (seq_mask, seq_alignment) = seq_alignment_mask(base_dir=base_dir,
                                                        dada2_filtered_rep_seqs=dada2_filtered_rep_seqs)
@@ -541,7 +553,7 @@ def run_pipeline(base_dir, data_artifact_path, sample_metadata_path, classifier_
                                                dada2_filtered_table=dada2_filtered_table)
 
         # Alpha and beta diversity
-        # TODO: requires metadata object with some sort of sample information (sample type). Need to handle this gracefully.
+        # TODO: requires metadata object with some sort of sample information (sample type)
         diversity_metrics = run_diversity_metrics(base_dir=base_dir,
                                                   dada2_filtered_table=dada2_filtered_table,
                                                   phylo_rooted_tree=phylo_rooted_tree,

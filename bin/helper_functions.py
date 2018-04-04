@@ -49,15 +49,15 @@ def get_readpair(sample_id, fastq_file_list):
     :return: the absolute filepaths of R1 and R2 for a given sample ID
     """
 
-    R1, R2 = None, None
+    r1, r2 = None, None
     for file in fastq_file_list:
         if sample_id in os.path.basename(file):
             if 'R1' in os.path.basename(file):
-                R1 = file
+                r1 = file
             elif 'R2' in os.path.basename(file):
-                R2 = file
-    if R1 is not None:
-        return [os.path.abspath(R1), os.path.abspath(R2)]
+                r2 = file
+    if r1 is not None:
+        return [os.path.abspath(r1), os.path.abspath(r2)]
     else:
         logging.debug('Could not pair {}'.format(sample_id))
 
@@ -148,15 +148,16 @@ def create_sampledata_artifact(datadir, qiimedir):
           "--type 'SampleData[PairedEndSequencesWithQuality]' " \
           "--input-path {datadir} " \
           "--output-path {qiimeout} " \
-          "--source-format CasavaOneEightSingleLanePerSampleDirFmt".format(datadir=datadir,
-                                                                           qiimeout=os.path.join(qiimedir,'paired-sample-data.qza'))
+          "--source-format CasavaOneEightSingleLanePerSampleDirFmt " \
+          "".format(datadir=datadir, qiimeout=os.path.join(qiimedir, 'paired-sample-data.qza'))
     out, err = execute_command(cmd)
 
     if out is not '' or err is not '':
         logging.debug('OUT: {}\nERR: {}'.format(out, err))
 
     logging.info('Successfully created QIIME 2 data Artifact')
-    return os.path.join(qiimedir,'paired-sample-data.qza')
+    return os.path.join(qiimedir, 'paired-sample-data.qza')
+
 
 def project_setup(outdir, inputdir):
     # Create folder structure
@@ -170,8 +171,7 @@ def project_setup(outdir, inputdir):
     logging.debug('Sample Dictionary:{}'.format(sample_dictionary))
 
     # Create symlinks in data folder
-    symlink_dictionary(sample_dictionary=sample_dictionary,
-                                        destination_folder=os.path.join(outdir, 'data'))
+    symlink_dictionary(sample_dictionary=sample_dictionary, destination_folder=os.path.join(outdir, 'data'))
 
     # Fix symlink filenames for Qiime 2
     append_dummy_barcodes(os.path.join(outdir, 'data'))
