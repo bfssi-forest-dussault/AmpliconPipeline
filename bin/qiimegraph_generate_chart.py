@@ -30,6 +30,8 @@ def extract_taxonomy(value):
     # Final cleanup. If there are remaining taxonomy characters it means a call to the specified level couldn't be made.
     if ';' in tax_string and '__' in tax_string:
         tax_string = 'Unclassified'
+
+        # The following section is now deprecated:
         # This returns the highest level of ID for a taxon that QIIME could call rather than the full messy string
         # Currently just have it returning 'Unclassified' because it's cleaner.
         # for i in reversed(tax_string.split(';')):
