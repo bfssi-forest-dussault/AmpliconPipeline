@@ -5,9 +5,6 @@ MAINTAINER Forest Dussault <forest.dussault@inspection.gc.ca>
 
 ENV DEBIAN_FRONTEND noninteractive
 
-# Building the image
-# docker build -t "ampliconpipeline:v0.9" .
-
 # Install packages
 RUN apt-get update -y -qq && apt-get install -y \
 	python-dev \
@@ -46,6 +43,9 @@ RUN curl -L https://ndownloader.figshare.com/files/10970087 -o classifiers/99_V3
 
 # Set the language to use utf-8 encoding
 ENV LANG C.UTF-8
+
+# Building the image
+# docker build -t "ampliconpipeline:v0.9" .
 
 # Running the image interactively:
 # docker run -it --rm -v /mnt/nas:/mnt/nas ampliconpipeline:v0.9
