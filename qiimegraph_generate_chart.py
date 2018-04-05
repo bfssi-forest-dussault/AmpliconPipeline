@@ -1,4 +1,5 @@
 from collections import OrderedDict
+
 import os
 import re
 import click
@@ -6,6 +7,7 @@ import pickle
 import qiime2
 import shutil
 import random
+
 import pandas as pd
 import matplotlib as mpl
 mpl.use('Agg')
@@ -30,14 +32,6 @@ def extract_taxonomy(value):
     # Final cleanup. If there are remaining taxonomy characters it means a call to the specified level couldn't be made.
     if ';' in tax_string and '__' in tax_string:
         tax_string = 'Unclassified'
-
-        # The following section is now deprecated:
-        # This returns the highest level of ID for a taxon that QIIME could call rather than the full messy string
-        # Currently just have it returning 'Unclassified' because it's cleaner.
-        # for i in reversed(tax_string.split(';')):
-        #     if len(i) > 6:
-        #         tax_string = i
-        #         break
 
     return tax_string
 
@@ -398,13 +392,11 @@ def generate_color_pickle():
 
     # Save the dictionary as a pickle for later reference
     pickle.dump(colordict,
-                open("/mnt/nas/Redmine/QIIME2_CondaEnv/qiimegraph_taxonomic_color_dictionary_V2.pickle",
-                     "wb"))
+                open('/mnt/nas/Redmine/QIIME2_CondaEnv/qiimegraph_taxonomic_color_dictionary_V2.pickle', 'wb'))
 
 
 def read_color_pickle():
-    colordict = pickle.load(open("/mnt/nas/Redmine/QIIME2_CondaEnv/qiimegraph_taxonomic_color_dictionary_V2.pickle",
-                                 "rb"))
+    colordict = pickle.load(open('./bin/qiimegraph_taxonomic_color_dictionary.pickle', 'rb'))
     return colordict
 
 
