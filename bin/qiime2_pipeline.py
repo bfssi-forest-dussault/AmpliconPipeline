@@ -3,6 +3,7 @@ import logging
 import multiprocessing
 import qiime2
 import pandas as pd
+
 from qiime2.plugins import feature_table, \
     dada2, \
     demux, \
@@ -21,6 +22,7 @@ def load_data_artifact(filepath):
     :return: qiime2 object containing all information on sequence data
     """
     data_artifact = qiime2.Artifact.load(filepath)
+    logging.info('Loaded data artifact successfully: {}'.format(filepath))
     return data_artifact
 
 
@@ -45,7 +47,7 @@ def visualize_metadata(base_dir, metadata_object):
     # Prepare and save metadata visualization
     metadata_viz = metadata.visualizers.tabulate(metadata_object)
     metadata_viz.visualization.save(export_path)
-    logging.info('Saved {} successfully'.format(export_path))
+    logging.info('Saved metadata visualization successfully: {}'.format(export_path))
 
     return metadata_viz
 
@@ -64,15 +66,13 @@ def visualize_demux(base_dir, data_artifact):
     # Prepare and save demux summary visualization
     demux_viz = demux.visualizers.summarize(data=data_artifact)
     demux_viz.visualization.save(export_path)
-    logging.info('Saved {} successfully'.format(export_path))
+    logging.info('Saved demux visualization successfully: {}'.format(export_path))
 
     return demux_viz
 
 
-# TODO: Allow these trimming parameters to be adjusted from cli.py
-def dada2_qc(base_dir, demultiplexed_seqs,
-             trim_left_f, trim_left_r, trunc_len_f, trunc_len_r,
-             max_ee=3, chimera_method='consensus', cpu_count=None):
+def dada2_qc(base_dir, demultiplexed_seqs, trim_left_f, trim_left_r, trunc_len_f, trunc_len_r, max_ee=3,
+             chimera_method='consensus', cpu_count=None):
     """
     :param base_dir: Main working directory filepath
     :param demultiplexed_seqs:
@@ -85,12 +85,18 @@ def dada2_qc(base_dir, demultiplexed_seqs,
     :param cpu_count:
     :return: qiime2/dada2 filtered table and representative sequences objects
     """
-    logging.info('Running dada2 for quality control of reads...')
+    logging.info('Running dada2 for quality control of reads (this will take awhile...)')
 
     # Grab all CPUs if parameter is not specified
     if cpu_count is None:
         cpu_count = multiprocessing.cpu_count()
         logging.info('Set CPU count to {}'.format(cpu_count))
+
+    logging.info('DADA2 trimming/truncation parameters:')
+    logging.info('trim_left_f: {}'.format(trim_left_f))
+    logging.info('trim_left_r: {}'.format(trim_left_r))
+    logging.info('trunc_len_f: {}'.format(trunc_len_f))
+    logging.info('trunc_len_r: {}'.format(trunc_len_r))
 
     # Run dada2
     (dada2_filtered_table, dada2_filtered_rep_seqs) = dada2.methods.denoise_paired(
@@ -106,7 +112,7 @@ def dada2_qc(base_dir, demultiplexed_seqs,
     # Save artifacts
     dada2_filtered_table.save(os.path.join(base_dir, 'table-dada2.qza'))
     dada2_filtered_rep_seqs.save(os.path.join(base_dir, 'rep-seqs-dada2.qza'))
-    logging.info('Completed running dada2')
+    logging.info('Completed running DADA2')
 
     return dada2_filtered_table, dada2_filtered_rep_seqs
 
@@ -126,10 +132,16 @@ def visualize_dada2(base_dir, dada2_filtered_table, dada2_filtered_rep_seqs, met
     # Prepare sequence table
     feature_table_seqs = feature_table.visualizers.tabulate_seqs(data=dada2_filtered_rep_seqs)
 
+    # Path setup
+    table_dada2_path = os.path.join(base_dir, 'table-dada2-summary.qzv')
+    rep_seqs_path = os.path.join(base_dir, 'rep-seqs-summary.qzv')
+
     # Save visualizations
-    feature_table_summary.visualization.save(os.path.join(base_dir, 'table-dada2-summary.qzv'))
-    feature_table_seqs.visualization.save(os.path.join(base_dir, 'rep-seqs-summary.qzv'))
-    logging.info('Saved dada2 visualizations successfully.')
+    feature_table_summary.visualization.save(table_dada2_path)
+    feature_table_seqs.visualization.save(rep_seqs_path)
+    logging.info('Saved DADA2 visualizations successfully.')
+    logging.info(table_dada2_path)
+    logging.info(rep_seqs_path)
 
     return feature_table_summary
 
@@ -144,7 +156,6 @@ def seq_alignment_mask(base_dir, dada2_filtered_rep_seqs, cpu_count=None):
     # Threading setup
     if cpu_count is None:
         cpu_count = multiprocessing.cpu_count()
-        logging.info('Set CPU count to {}'.format(cpu_count))
 
     # Path setup
     aligned_export_path = os.path.join(base_dir, 'aligned-rep-seqs.qza')
@@ -228,6 +239,7 @@ def calculate_maximum_depth(dada2_table):
         value_dict[column] = df[column].sum()
 
     max_depth = max(value_dict.values())
+    logging.info('Maximum depth found in DADA2 table: {}'.format(str(max_depth)))
     return max_depth
 
 
@@ -389,7 +401,7 @@ def run_diversity_metrics(base_dir, dada2_filtered_table, phylo_rooted_tree, met
     return diversity_metrics
 
 
-# TODO: Implement this function to allow for training
+# TODO: Implement this function to allow for training using custom primer sets/reference taxonomies
 def train_feature_classifier(base_dir, otu_filepath, reference_taxonomy_filepath, f_primer=None, r_primer=None):
     """
     Trains a Naive Bayes classifier based on a reference database/taxonomy
@@ -423,15 +435,6 @@ def train_feature_classifier(base_dir, otu_filepath, reference_taxonomy_filepath
                                                                                    reference_taxonomy=ref_taxonomy)
 
     return naive_bayes_classifier
-
-
-# TODO: Implement these features https://docs.qiime2.org/2017.12/tutorials/longitudinal/ for longitudinal data
-def longitudinal_comparison(base_dir):
-    pass
-
-
-def merge_feature_tables(base_dir):
-    pass
 
 
 def run_qc_pipeline(base_dir, data_artifact_path, sample_metadata_path):
@@ -474,6 +477,7 @@ def write_new_metadata(df, sample_metadata_path):
 
 
 def validate_metadata(base_dir, sample_metadata_path):
+    logging.info('Validating metadata file: {}'.format(sample_metadata_path))
     df = read_metadata_df(sample_metadata_path)
     df['#SampleID'] = df['#SampleID'].apply(validate_sample_id)  # Assumption that first column is the SampleID column
     new_metadata_path = write_new_metadata(df, sample_metadata_path)
@@ -496,6 +500,11 @@ def run_pipeline(base_dir, data_artifact_path, sample_metadata_path, classifier_
     :param data_artifact_path:
     :param sample_metadata_path:
     :param classifier_artifact_path:
+    :param filtering_flag:
+    :param trim_left_f:
+    :param trim_left_r:
+    :param trunc_len_f:
+    :param trunc_len_r:
     :param filtering_flag:
     """
     # Load seed object
