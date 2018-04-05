@@ -29,14 +29,14 @@ source activate AmpliconPipeline
 
 3. Get started with the following:
 ```
-python cli.py --help
+python ampliconpipeline.py --help
 ```
 
 
 ### Command Line Arguments
 
 ```
-Usage: cli.py [OPTIONS]
+Usage: ampliconpipeline.py [OPTIONS]
 
 Options:
   -i, --inputdir PATH          Directory containing your raw MiSeq output
@@ -60,14 +60,14 @@ Options:
                                pipeline to establish acceptable
                                trimming/truncation parameters to pass to
                                dada2.
-  -tlf, --trim_left_f INTEGER  Trim n bases from the 5' end of the forward
+  -tf,  --trim_left_f INTEGER  Trim n bases from the 5' end of the forward
                                reads. Defaults to 10.
-  -tlr, --trim_left_r INTEGER  Trim n bases from the 5' end of the reverse
-                               reads. Defaults to 10.
+  -tr,  --trim_left_r INTEGER  Trim n bases from the 5' end of the reverse
+                               reads. Defaults to 5.
   -trf, --trunc_len_f INTEGER  Truncate the forward reads to n bases. Defaults
-                               to 290.
+                               to 280.
   -trr, --trunc_len_r INTEGER  Truncate the reverse reads to n bases. Defaults
-                               to 290.
+                               to 280.
   -v, --verbose                Set this flag to enable more verbose output.
   --help                       Show this message and exit.
 ```
@@ -89,7 +89,7 @@ dependent on having detailed metadata available.
 
 #### Flags & Output Details
 There are three separate paths the pipeline can take depending on the
-flag provided to **cli.py**. The relevant output file is listed at the end of each step.
+flag provided to **ampliconpipeline.py**. The relevant output file is listed at the end of each step.
 1. Standard
     1. Load sequence data and sample metadata file into a QIIME 2 Artifact (`paired-sample-data.qza`)
     2. Filter, denoise reads with dada2 (`table-dada2-summary.qzv`)
