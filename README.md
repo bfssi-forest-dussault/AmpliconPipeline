@@ -6,6 +6,11 @@ This program will take an OLC 16S MiSeq amplicon sequencing run and
 process the output with QIIME 2. Currently, this is intended to be used
 internally within the OLC R&D division.
 
+This program was built with the
+[QIIME 2 Artifact API](https://docs.qiime2.org/2018.2/interfaces/artifact-api/).
+Documentation on how to interact with various plugins
+for QIIME 2 via Python can be found in the [QIIME 2 plugin docs](https://docs.qiime2.org/2018.2/plugins/).
+
 ### Installation Instructions
 
 The AmpliconPipeline is distributed as a Docker image.
