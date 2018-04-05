@@ -76,7 +76,7 @@ def cli(ctx, inputdir, outdir, metadata, classifier, evaluate_quality, filtering
         qiime2_pipeline.run_qc_pipeline(base_dir=os.path.join(outdir, 'qiime2'),
                                         data_artifact_path=data_artifact_path,
                                         sample_metadata_path=metadata)
-        logging.info('\nQIIME2-QC Pipeline Completed')
+        logging.info('QIIME2-QC Pipeline Completed')
         ctx.exit()
 
     # Input validation
@@ -101,10 +101,9 @@ def cli(ctx, inputdir, outdir, metadata, classifier, evaluate_quality, filtering
                                  filtering_flag=filtering_flag,
                                  trim_left_f=trim_left_f, trim_left_r=trim_left_r,
                                  trunc_len_f=trunc_len_f, trunc_len_r=trunc_len_r)
-    logging.info('\nQIIME2 Pipeline Completed')
+    logging.info('QIIME2 Pipeline Completed')
     ctx.exit()
 
 
 if __name__ == '__main__':
     cli()
-
