@@ -47,6 +47,11 @@ ENV LANG C.UTF-8
 # Building the image
 # docker build -t "ampliconpipeline:v0.9" .
 
+# Pushing the image to Dockerhub
+# docker push forestdussault/ampliconpipeline:v0.9
+
 # Running the image interactively:
 # docker run -it --rm -v /mnt/nas:/mnt/nas ampliconpipeline:v0.9
 
+# Example command
+# python ampliconpipeline.py -i /mnt/nas/MiSeq_Amplicon/171206 -o /mnt/nas/Forest/ampliconpipeline_docker_test -m /mnt/nas/Forest/ampliconpipeline_docker_test.tsv -f -tlf 18 -tlr 10
