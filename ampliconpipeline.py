@@ -80,12 +80,6 @@ def cli(ctx, inputdir, outdir, metadata, classifier, evaluate_quality, filtering
         ctx.exit()
 
     # Input validation
-    if classifier is None:
-        click.echo(ctx.get_help(), err=True)
-        click.echo('\nERROR: Please provide a path to an existing classifier. '
-                   'Training is not yet implemented.', err=True)
-        ctx.exit()
-
     if os.path.isdir(outdir):
         click.echo(ctx.get_help(), err=True)
         click.echo('\nERROR: Specified output directory already exists. '
