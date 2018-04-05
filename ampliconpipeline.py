@@ -1,18 +1,13 @@
- #!/usr/bin/env python3
+#!/usr/bin/env python3
 
 import logging
 import click
 import os
+
 from bin import helper_functions
 from bin import qiime2_pipeline
 
 
-"""
-trim_left_f=18, trim_left_r=8, trunc_len_f=280, trunc_len_r=245
-"""
-
-
-# TODO: Implement trimming parameters as click options
 @click.command()
 @click.option('-i', '--inputdir',
               type=click.Path(exists=True),
@@ -29,7 +24,7 @@ trim_left_f=18, trim_left_r=8, trunc_len_f=280, trunc_len_r=245
               help='Path to QIIME2 tab-separated metadata file. This must be a *.tsv file.')
 @click.option('-c', '--classifier',
               type=click.Path(exists=True),
-              default='./classifiers/99_V3V4_Silva_naive_bayes_classifier.qza',  # TODO: test if this works
+              default='./classifiers/99_V3V4_Silva_naive_bayes_classifier.qza',
               required=False,
               help='Path to a QIIME2 Classifier Artifact. By default this will point to a previously trained '
                    'V3-V4 classifier using SILVA taxonomy.')
@@ -44,18 +39,18 @@ trim_left_f=18, trim_left_r=8, trunc_len_f=280, trunc_len_r=245
               help='Setting this flag will only run the pipeline up until generating the demux_summary.qzv file. '
                    'This is important to do before running the pipeline to establish acceptable trimming/truncation '
                    'parameters to pass to dada2.')
-@click.option('-tlf', '--trim_left_f',
+@click.option('-tf', '--trim_left_f',
               default=10,
               help='Trim n bases from the 5\' end of the forward reads. Defaults to 10.')
-@click.option('-tlr', '--trim_left_r',
-              default=10,
-              help='Trim n bases from the 5\' end of the reverse reads. Defaults to 10.')
+@click.option('-tr', '--trim_left_r',
+              default=5,
+              help='Trim n bases from the 5\' end of the reverse reads. Defaults to 5.')
 @click.option('-trf', '--trunc_len_f',
-              default=290,
-              help='Truncate the forward reads to n bases. Defaults to 290.')
+              default=280,
+              help='Truncate the forward reads to n bases. Defaults to 280.')
 @click.option('-trr', '--trunc_len_r',
-              default=290,
-              help='Truncate the reverse reads to n bases. Defaults to 290.')
+              default=280,
+              help='Truncate the reverse reads to n bases. Defaults to 280.')
 @click.option('-v', '--verbose',
               is_flag=True,
               default=False,
@@ -105,7 +100,6 @@ def cli(ctx, inputdir, outdir, metadata, classifier, evaluate_quality, filtering
         logging.info('FILTERING_FLAG SET. Pipeline will only proceed to DADA2 filtering step.')
 
     # Run the full pipeline
-    logging.info('Starting QIIME2 Pipeline with output routing to {}'.format(outdir))
     qiime2_pipeline.run_pipeline(base_dir=os.path.join(outdir, 'qiime2'),
                                  data_artifact_path=data_artifact_path,
                                  sample_metadata_path=metadata,
