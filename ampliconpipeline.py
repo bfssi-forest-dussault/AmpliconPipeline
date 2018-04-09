@@ -86,6 +86,14 @@ def cli(ctx, inputdir, outdir, metadata, classifier, evaluate_quality, filtering
                    'Please provide a new path that does not already exist.', err=True)
         ctx.exit()
 
+    # Classifier check
+    if not os.path.isfile(classifier):
+        click.echo(ctx.get_help(), err=True)
+        click.echo('\nERROR: Classifier path is not valid. Please point to an existing classifier .qza file.', err=True)
+        ctx.exit()
+    else:
+        logging.debug('Classifier path found at {}'.format(os.path.abspath(classifier)))
+
     # Project setup + get path to data artifact
     data_artifact_path = helper_functions.project_setup(outdir=outdir, inputdir=inputdir)
 
