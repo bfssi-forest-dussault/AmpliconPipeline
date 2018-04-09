@@ -13,29 +13,23 @@ for QIIME 2 via Python can be found in the [QIIME 2 plugin docs](https://docs.qi
 
 ### Installation Instructions
 
-The AmpliconPipeline is distributed as a Docker image.
-As a result, an installation of Docker is the only dependency.
+The AmpliconPipeline can be installed and run via conda.
 
-To retrieve the Docker image:
+1. Install AmpliconPipeline and activate the environmnet
 ```
-docker pull forestdussault/ampliconpipeline:v0.9
-```
-
-### Running the pipeline
-1. Interactively enter the AmpliconPipeline container
-```
-docker run -it --rm -v path/to/your/data:path/to/your/data ampliconpipeline:v0.9
-```
-
-2. Source the conda environment
-```
+git clone https://github.com/forestdussault/AmpliconPipeline.git
+cd AmpliconPipeline
+export PATH="/path/to/AmpliconPipeline:$PATH"
+conda create --name AmpliconPipeline --file requirements.txt
 source activate AmpliconPipeline
 ```
 
-3. Get started with the following:
+2. Retrieve the classifier trained on the V3-V4 region
 ```
-python ampliconpipeline.py --help
+mkdir classifiers
+curl -L https://ndownloader.figshare.com/files/10970087 -o classifiers/99_V3V4_Silva_naive_bayes_classifier.qza
 ```
+
 
 
 ### Command Line Arguments
