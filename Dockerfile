@@ -1,4 +1,9 @@
 # Dockerfile for AmpliconPipeline
+
+# NOTE: This Dockerfile will successfully build into a usable container, though due to temporary files created by DADA2,
+# the full pipeline cannot run to completion. DADA2 will by default drop temporary files into the Docker container and
+# eventually run out of space. Until this is fixed, use the conda installation method instead.
+
 FROM ubuntu:16.04
 
 MAINTAINER Forest Dussault <forest.dussault@inspection.gc.ca>
@@ -41,17 +46,24 @@ RUN conda create --name AmpliconPipeline --file requirements.txt
 RUN mkdir /home/ubuntu/AmpliconPipeline/classifiers
 RUN curl -L https://ndownloader.figshare.com/files/10970087 -o classifiers/99_V3V4_Silva_naive_bayes_classifier.qza
 
+# Setup data directory
+RUN mkdir /home/ubuntu/AmpliconPipeline/data
+
 # Set the language to use utf-8 encoding
 ENV LANG C.UTF-8
 
 # Building the image
-# docker build -t "ampliconpipeline:v0.9" .
+# docker build --no-cache -t "ampliconpipeline:v0.9.1" .
 
 # Pushing the image to Dockerhub
-# docker push forestdussault/ampliconpipeline:v0.9
+# docker push forestdussault/ampliconpipeline:v0.9.1
 
-# Running the image interactively:
-# docker run -it --rm -v /mnt/nas:/mnt/nas ampliconpipeline:v0.9
+# Running the image interactively (mounting volume)
+# docker run -it --rm --mount source=ampliconpipeline-vol,target=/data forestdussault/ampliconpipeline:v0.9
+# docker run -it --rm --mount src=`pwd` forestdussault/ampliconpipeline:v0.9
+
+# Running the image interactively (binding volume):
+# docker run -it --rm -v /mnt/nas:/mnt/nas ampliconpipeline:v0.9.1
 
 # Example command
 # python ampliconpipeline.py -i /mnt/nas/MiSeq_Amplicon/171206 -o /mnt/nas/Forest/ampliconpipeline_docker_test -m /mnt/nas/Forest/ampliconpipeline_docker_test.tsv -f -tlf 18 -tlr 10
