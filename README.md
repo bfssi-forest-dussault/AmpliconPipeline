@@ -24,7 +24,7 @@ conda create --name AmpliconPipeline --file requirements.txt
 source activate AmpliconPipeline
 ```
 
-2. Retrieve the classifier trained on the V3-V4 region
+2. Retrieve the classifier trained on the V3-V4 region and drop it into `.../AmpliconPipeline/classifiers`
 ```
 mkdir classifiers
 curl -L https://ndownloader.figshare.com/files/10970087 -o classifiers/99_V3V4_Silva_naive_bayes_classifier.qza
