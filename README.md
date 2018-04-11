@@ -30,8 +30,6 @@ mkdir classifiers
 curl -L https://ndownloader.figshare.com/files/10970087 -o classifiers/99_V3V4_Silva_naive_bayes_classifier.qza
 ```
 
-
-
 ### Command Line Arguments
 
 ```
@@ -70,7 +68,6 @@ Options:
   -v, --verbose                Set this flag to enable more verbose output.
   --help                       Show this message and exit.
 ```
-
 
 ### Usage notes
 #### Output
@@ -114,11 +111,11 @@ All `.qzv` and `.qza` output files are viewable at https://view.qiime2.org/
 #### Classifier
 By default, this pipeline uses a pre-trained classifier using the V3-V4 region.
 
-The classifier and some additional details can be retrieved here:
+The classifier and some additional details on how it was trained can be retrieved here:
 https://figshare.com/articles/99_V3V4_Silva_naive_bayes_classifier_qza/6087197
 
 ### Tests and Example Data
 
 Basic tests can be found in `tests/`.
 
-To run these tests, use: `pytest`
+To run these tests, use: `pytest -v tests/` from the root of the repository.
