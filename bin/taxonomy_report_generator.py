@@ -17,7 +17,9 @@ TAXONOMIC_DICT = {
 }
 
 
-def prepare_df(filepath, taxonomic_level, sample, index_col='index', filtering=None, cutoff=None):
+# NOTE: Note that the index_col is by default 'sample_annotation'. This assumes that the METADATA file used to generate
+# this run has a column called 'sample_annotation' which acts as a secondary ID alongside the Seq-IDs provided.
+def prepare_df(filepath, taxonomic_level, sample, index_col='sample_annotation', filtering=None, cutoff=None):
     df = pd.read_csv(filepath, index_col=index_col)
 
     # Remove all extraneous metadata columns
@@ -44,7 +46,11 @@ def prepare_df(filepath, taxonomic_level, sample, index_col='index', filtering=N
     df = convert_to_percentages(df, columns_to_target)
 
     # Remove rows where the value for the sample is 0
-    df = df[df.iloc[:, 1] != 0]
+    try:
+        df = df[df.iloc[:, 1] != 0]
+    except IndexError:
+        print('The specified sample {} could not be found. Quitting.'.format(sample))
+        quit()
 
     if cutoff is not None:
         # Remove rows where the value for the sample is < cutoff
@@ -133,11 +139,39 @@ def extract_taxonomy(value):
     for junk in junk_list:
         tax_string = tax_string.replace(junk, '')
 
+    # finally.. if something went really wrong
+    if tax_string == '':
+        tax_string = value
+
     return tax_string
 
 
-def taxonomy_report_generator(tax_file, out_dir, sample, taxonomic_level, cutoff=None):
-    csv_files = extract_csv_files(tax_file, out_dir)
+@click.command()
+@click.option('-i', '--input_file',
+              type=click.Path(exists=True),
+              required=True,
+              help='Path to taxonomy barplot *.qzv file')
+@click.option('-o', '--out_dir',
+              type=click.Path(exists=True),
+              required=True,
+              help='Folder to save output file into')
+@click.option('-s', '--sample',
+              default=None,
+              required=True,
+              help='Sample name to prepare data for')
+@click.option('-t', '--taxonomic_level',
+              required=True,
+              help='Taxonomic level to generate report for. Options: '
+                   '["kingdom", "phylum", "class", "order", "family", "genus", "species"]')
+@click.option('-c', '--cutoff',
+              required=False,
+              default=0.0,
+              help='Filter dataset to a specified cutoff level. For example, setting this to 5.5 will only show '
+                   'rows with values >= 5.5%')
+def taxonomy_report_generator(input_file, out_dir, sample, taxonomic_level, cutoff):
+    csv_files = extract_csv_files(input_file, out_dir)
+
+    taxonomic_level = taxonomic_level.lower()
 
     target_file = None
     for file in csv_files:
@@ -145,8 +179,10 @@ def taxonomy_report_generator(tax_file, out_dir, sample, taxonomic_level, cutoff
             target_file = file
 
     df = prepare_df(filepath=target_file, taxonomic_level=taxonomic_level, sample=sample, cutoff=cutoff)
-    df.to_csv(os.path.join(out_dir, 'taxonomy_report_{}.csv'.format(taxonomic_level)), index=False)
+    csv_out_path = os.path.join(out_dir, 'taxonomy_report_{}.csv'.format(taxonomic_level))
+    df.to_csv(csv_out_path, index=False)
 
 
 if __name__ == '__main__':
     taxonomy_report_generator()
+
