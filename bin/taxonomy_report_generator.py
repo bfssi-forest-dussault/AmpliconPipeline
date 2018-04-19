@@ -139,6 +139,11 @@ def extract_taxonomy(value):
         for value in tax_list:
             if value != '__':
                 tax_string = value + ' (closest known classification)'
+    elif 'uncultured' in tax_string.lower():
+        tax_list = value.split(';')
+        for value in tax_list:
+            if 'uncultured' not in value:
+                tax_string = value + ' (closest known classification)'
 
     return tax_string
 
@@ -182,4 +187,3 @@ def taxonomy_report_generator(input_file, out_dir, sample, taxonomic_level, cuto
 
 if __name__ == '__main__':
     taxonomy_report_generator()
-
