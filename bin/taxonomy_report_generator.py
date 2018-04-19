@@ -125,23 +125,20 @@ def extract_taxonomy(value):
         'D_4__', 'D_5__', 'D_6__', 'D_7__',
     ]
 
-    tax_string = value.split(';')[-1:][0]  # last item in list
+    # Initial cleanup
     for junk in junk_list:
-        tax_string = tax_string.replace(junk, '')
+        value = value.replace(junk, '')
 
-    if tax_string == '__':
+    tax_string = value.split(';')[-1:][0]  # last item in list
+
+    if tax_string == '':
+        tax_list = value.split(';')
+        tax_string = [x for x in reversed(tax_list) if x != ''][0] + ' (closest known classification)'
+    elif tax_string == '__':
         tax_list = value.split(';')
         for value in tax_list:
             if value != '__':
                 tax_string = value + ' (closest known classification)'
-
-    # One more cleanup
-    for junk in junk_list:
-        tax_string = tax_string.replace(junk, '')
-
-    # finally.. if something went really wrong
-    if tax_string == '':
-        tax_string = value
 
     return tax_string
 
@@ -179,7 +176,7 @@ def taxonomy_report_generator(input_file, out_dir, sample, taxonomic_level, cuto
             target_file = file
 
     df = prepare_df(filepath=target_file, taxonomic_level=taxonomic_level, sample=sample, cutoff=cutoff)
-    csv_out_path = os.path.join(out_dir, 'taxonomy_report_{}.csv'.format(taxonomic_level))
+    csv_out_path = os.path.join(out_dir, 'taxonomy_report_{}_{}.csv'.format(taxonomic_level, sample))
     df.to_csv(csv_out_path, index=False)
 
 
