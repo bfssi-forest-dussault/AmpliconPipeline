@@ -13,6 +13,8 @@ We only want to look at the sprout samples across the two runs, so we can first 
 down with this script. The final analysis files will only contain the sprouts samples.
 """
 
+# TODO: Test this...
+
 
 def merge_run_tables(table1_artifact_path, table2_artifact_path):
     """
