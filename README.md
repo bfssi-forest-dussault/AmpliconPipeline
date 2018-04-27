@@ -77,7 +77,7 @@ Options:
 #### Metadata
 A valid tab delimited metadata file must be provided to run the AmpliconPipeline.
 An example of one using the standard OLC format is provided in the root
-of this repository (**sample_metadata.tsv**).
+of this repository (**sample_metadata_example.tsv**).
 
 The only field that is
 absolutely required is `#SampleID` (containing OLC Seq IDs), though downstream analysis is
