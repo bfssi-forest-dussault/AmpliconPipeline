@@ -107,7 +107,8 @@ def filter_run_repseqs(sample_id_file, dada2_rep_seqs):
               required=False,
               type=click.Path(exists=True),
               default=None,
-              help='Path to text file containing sample IDs that you wish to keep for the analysis')
+              help='Path to a .tsv file containing sample IDs that you wish to keep for the analysis.'
+                   'Each sample ID should be on a new row. The header for this .tsv must be #SampleID')
 def run_merge_pipeline(base_dir, sample_metadata_path, classifier_artifact_path,
                        table1_artifact_path, table2_artifact_path, repseqs1_artifact_path, repseqs2_artifact_path,
                        filtering_list):
