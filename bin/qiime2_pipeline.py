@@ -59,7 +59,7 @@ def visualize_demux(base_dir, data_artifact):
     :param data_artifact: qiime2 data artifact object
     :return: qiime2 demux visualization object
     """
-    logging.info('Running demux visualizer...')
+    logging.info('Visualizing demux...')
 
     # Path setup
     export_path = os.path.join(base_dir, 'demux_summary.qzv')
@@ -86,7 +86,7 @@ def dada2_qc(base_dir, demultiplexed_seqs, trim_left_f, trim_left_r, trunc_len_f
     :param cpu_count:
     :return: qiime2/dada2 filtered table and representative sequences objects
     """
-    logging.info('Running dada2 for quality control of reads (this will take awhile...)')
+    logging.info('Running DADA2 (this could take awhile)...')
 
     # Grab all CPUs if parameter is not specified
     if cpu_count is None:
@@ -126,6 +126,8 @@ def visualize_dada2(base_dir, dada2_filtered_table, dada2_filtered_rep_seqs, met
     :param metadata_object: 
     :return: qiime2 feature table summary object
     """
+    logging.info('Visualizing DADA2 results...')
+
     # Prepare feature table
     feature_table_summary = feature_table.visualizers.summarize(table=dada2_filtered_table,
                                                                 sample_metadata=metadata_object)
@@ -153,6 +155,8 @@ def seq_alignment_mask(base_dir, dada2_filtered_rep_seqs, cpu_count=None):
     :param cpu_count: number of CPUs to use for analysis
     :return: qiime2 sequence mask and sequence alignment objects
     """
+    logging.info('Running alignment mask...')
+
     # Threading setup
     if cpu_count is None:
         cpu_count = multiprocessing.cpu_count()
@@ -180,6 +184,8 @@ def phylo_tree(base_dir, seq_mask):
     :param seq_mask: 
     :return: qiime2 unrooted and rooted tree objects
     """
+    logging.info('Generating trees...')
+
     # Path setup
     unrooted_export_path = os.path.join(base_dir, 'unrooted-tree.qza')
     rooted_export_path = os.path.join(base_dir, 'rooted-tree.qza')
@@ -239,7 +245,7 @@ def calculate_maximum_depth(dada2_table):
         value_dict[column] = df[column].sum()
 
     max_depth = max(value_dict.values())
-    logging.info('Maximum depth found in DADA2 table: {}'.format(str(max_depth)))
+    logging.info('Maximum depth in DADA2 table: {}'.format(str(max_depth)))
     return max_depth
 
 
@@ -251,6 +257,8 @@ def alpha_rarefaction_visualization(base_dir, dada2_filtered_table, max_depth=No
     :param max_depth: 
     :return: qiime2 alpha rarefaction visualization object
     """
+    logging.info('Generating rarefaction curves...')
+
     # Path setup
     alpha_rarefaction_export_path = os.path.join(base_dir, 'alpha-rarefaction.qzv')
 
@@ -278,6 +286,8 @@ def classify_taxonomy(base_dir, dada2_filtered_rep_seqs, classifier, cpu_count=N
     :param cpu_count:
     :return: qiime2 post-classification taxonomy object
     """
+    logging.info('Classifying reads...')
+
     # Path setup
     export_path = os.path.join(base_dir, 'taxonomy.qza')
 
@@ -305,6 +315,8 @@ def visualize_taxonomy(base_dir, metadata_object, taxonomy_analysis, dada2_filte
     :param dada2_filtered_table: 
     :return: qiime2 taxonomy metadata object
     """
+    logging.info('Visualizing taxonomy...')
+
     # Path setup
     tax_export_path = os.path.join(base_dir, 'taxonomy.qzv')
     barplot_export_path = os.path.join(base_dir, 'taxonomy_barplot.qzv')
@@ -338,7 +350,7 @@ def run_diversity_metrics(base_dir, dada2_filtered_table, phylo_rooted_tree, met
     :param sampling_depth: 
     :return: qiime2 diversity core metrics object
     """
-    logging.info('Attempting to calculate diversity metrics')
+    logging.info('Running diversity metrics...')
 
     # Set sampling_depth to 10% of the maximum if no value is provided. Should probably rework this.
     if sampling_depth is None:
