@@ -156,7 +156,6 @@ def seq_alignment_mask(base_dir, dada2_filtered_rep_seqs, cpu_count=None):
     :return: qiime2 sequence mask and sequence alignment objects
     """
 
-
     # Threading setup
     if cpu_count is None:
         cpu_count = multiprocessing.cpu_count()
