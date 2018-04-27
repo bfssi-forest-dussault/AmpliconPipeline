@@ -4,6 +4,7 @@ import multiprocessing
 import qiime2
 import pandas as pd
 
+from qiime2 import Metadata
 from qiime2.plugins import feature_table, \
     dada2, \
     demux, \
@@ -310,7 +311,7 @@ def visualize_taxonomy(base_dir, metadata_object, taxonomy_analysis, dada2_filte
     barplot_export_path = os.path.join(base_dir, 'taxonomy_barplot.qzv')
 
     # Load metadata
-    taxonomy_metadata = qiime2.Metadata.from_artifact(taxonomy_analysis.classification)
+    taxonomy_metadata = taxonomy_analysis.view(Metadata)
 
     # Create taxonomy visualization
     taxonomy_visualization = metadata.visualizers.tabulate(taxonomy_metadata)
@@ -392,7 +393,7 @@ def run_diversity_metrics(base_dir, dada2_filtered_table, phylo_rooted_tree, met
     try:
         beta_group = diversity.visualizers.beta_group_significance(
             distance_matrix=diversity_metrics.unweighted_unifrac_distance_matrix,
-            metadata=metadata_object.get_category('sample sub-sub-type'),
+            metadata=metadata_object.get_column('sample sub-sub-type'),
             pairwise=True)
         beta_group.visualization.save(beta_visualization_path)
     except:
