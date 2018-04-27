@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import click
 from qiime2.plugins import feature_table
 from bin.qiime2_pipeline import *
