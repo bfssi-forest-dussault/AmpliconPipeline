@@ -166,11 +166,11 @@ def project_setup(outdir, inputdir):
     os.mkdir(outdir)
     os.mkdir(os.path.join(outdir, 'data'))
     os.mkdir(os.path.join(outdir, 'qiime2'))
-    logging.debug('Created QIIME 2 folder structure at {}'.format(outdir))
+    logging.debug('Created QIIME2 analysis folder: {}'.format(outdir))
 
     # Prepare dictionary containing R1 and R2 for each sample ID
     sample_dictionary = get_sample_dictionary(inputdir)
-    logging.debug('Sample Dictionary:{}'.format(sample_dictionary))
+    logging.debug('Sample Dictionary: {}'.format(sample_dictionary))
 
     # Create symlinks in data folder
     symlink_dictionary(sample_dictionary=sample_dictionary, destination_folder=os.path.join(outdir, 'data'))
