@@ -451,10 +451,10 @@ def run_qc_pipeline(base_dir, data_artifact_path, sample_metadata_path):
     metadata_object = load_sample_metadata(sample_metadata_path)
 
     # Visualize metadata
-    metadata_viz = visualize_metadata(base_dir=base_dir, metadata_object=metadata_object)
+    visualize_metadata(base_dir=base_dir, metadata_object=metadata_object)
 
     # Demux
-    demux_viz = visualize_demux(base_dir=base_dir, data_artifact=data_artifact)
+    visualize_demux(base_dir=base_dir, data_artifact=data_artifact)
 
 
 def read_metadata_df(sample_metadata_path):
@@ -517,22 +517,18 @@ def run_pipeline(base_dir, data_artifact_path, sample_metadata_path, classifier_
     metadata_object = load_sample_metadata(new_metadata_path)
 
     # Visualize metadata
-    metadata_viz = visualize_metadata(base_dir=base_dir, metadata_object=metadata_object)
+    visualize_metadata(base_dir=base_dir, metadata_object=metadata_object)
 
     # Demux
-    demux_viz = visualize_demux(base_dir=base_dir, data_artifact=data_artifact)
+    visualize_demux(base_dir=base_dir, data_artifact=data_artifact)
 
     # Filter & denoise w/dada2
-    (dada2_filtered_table, dada2_filtered_rep_seqs) = dada2_qc(base_dir=base_dir,
-                                                               demultiplexed_seqs=data_artifact,
+    (dada2_filtered_table, dada2_filtered_rep_seqs) = dada2_qc(base_dir=base_dir, demultiplexed_seqs=data_artifact,
                                                                trim_left_f=trim_left_f, trim_left_r=trim_left_r,
-                                                               trunc_len_f=trunc_len_f, trunc_len_r=trunc_len_r
-                                                               )
+                                                               trunc_len_f=trunc_len_f, trunc_len_r=trunc_len_r)
     # Visualize dada2
-    feature_table_summary = visualize_dada2(base_dir=base_dir,
-                                            dada2_filtered_table=dada2_filtered_table,
-                                            dada2_filtered_rep_seqs=dada2_filtered_rep_seqs,
-                                            metadata_object=metadata_object)
+    visualize_dada2(base_dir=base_dir, dada2_filtered_table=dada2_filtered_table,
+                    dada2_filtered_rep_seqs=dada2_filtered_rep_seqs, metadata_object=metadata_object)
 
     # Only do these steps if the filtering_flag is false
     if filtering_flag is False:
@@ -550,23 +546,17 @@ def run_pipeline(base_dir, data_artifact_path, sample_metadata_path, classifier_
         classifier = load_classifier_artifact(classifier_artifact_path=classifier_artifact_path)
 
         # Produce rarefaction visualization
-        alpha_rarefaction_viz = alpha_rarefaction_visualization(base_dir=base_dir,
-                                                                dada2_filtered_table=dada2_filtered_table)
+        alpha_rarefaction_visualization(base_dir=base_dir, dada2_filtered_table=dada2_filtered_table)
 
         # Run taxonomic analysis
-        taxonomy_analysis = classify_taxonomy(base_dir=base_dir,
-                                              dada2_filtered_rep_seqs=dada2_filtered_rep_seqs,
+        taxonomy_analysis = classify_taxonomy(base_dir=base_dir, dada2_filtered_rep_seqs=dada2_filtered_rep_seqs,
                                               classifier=classifier)
 
         # Visualize taxonomy
-        taxonomy_metadata = visualize_taxonomy(base_dir=base_dir,
-                                               metadata_object=metadata_object,
-                                               taxonomy_analysis=taxonomy_analysis,
-                                               dada2_filtered_table=dada2_filtered_table)
+        visualize_taxonomy(base_dir=base_dir, metadata_object=metadata_object,
+                           taxonomy_analysis=taxonomy_analysis, dada2_filtered_table=dada2_filtered_table)
 
         # Alpha and beta diversity
         # TODO: requires metadata object with some sort of sample information (sample type)
-        diversity_metrics = run_diversity_metrics(base_dir=base_dir,
-                                                  dada2_filtered_table=dada2_filtered_table,
-                                                  phylo_rooted_tree=phylo_rooted_tree,
-                                                  metadata_object=metadata_object)
+        run_diversity_metrics(base_dir=base_dir, dada2_filtered_table=dada2_filtered_table,
+                              phylo_rooted_tree=phylo_rooted_tree, metadata_object=metadata_object)
