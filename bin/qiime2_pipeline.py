@@ -311,7 +311,7 @@ def visualize_taxonomy(base_dir, metadata_object, taxonomy_analysis, dada2_filte
     barplot_export_path = os.path.join(base_dir, 'taxonomy_barplot.qzv')
 
     # Load metadata
-    taxonomy_metadata = taxonomy_analysis.view(Metadata)
+    taxonomy_metadata = taxonomy_analysis.classification.view(Metadata)
 
     # Create taxonomy visualization
     taxonomy_visualization = metadata.visualizers.tabulate(taxonomy_metadata)
