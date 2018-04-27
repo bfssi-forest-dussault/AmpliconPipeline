@@ -79,12 +79,9 @@ A valid tab delimited metadata file must be provided to run the AmpliconPipeline
 An example of one using the standard OLC format is provided in the root
 of this repository (**sample_metadata_example.tsv**).
 
-The only field that is
-absolutely required is `#SampleID` (containing OLC Seq IDs), though downstream analysis is
+The only fields that are
+absolutely **required** are `#SampleID` (containing OLC Seq IDs) and `sample_annotation` (containing secondary IDs), though downstream analysis is
 dependent on having detailed metadata available.
-
-In addition to `#SampleID`, it is highly recommended that a secondary ID column
-called `sample_annotation` is added. This column should contain a secondary descriptive identifier for each OLC Seq ID.
 
 #### Flags & Output Details
 There are three separate paths the pipeline can take depending on the
@@ -103,7 +100,7 @@ flag provided to **ampliconpipeline.py**. The relevant output file is listed at 
     `jaccard_emperor.qzv`)
 2. Evaluate quality (`-eq`, `--evaluate_quality`)
     1. Load sequence data and sample metadata file into a QIIME 2 Artifact (`paired-sample-data.qza`)
-    2. Produce data quality visualization `demux_summary.qzv`
+    2. Produce data quality visualization (`demux_summary.qzv`)
 3. Filtering flag (`-f`, `--filtering_flag`)
     1. Load sequence data and sample metadata file into a QIIME 2 Artifact (`paired-sample-data.qza`)
     2. Filter, denoise reads with dada2 (`table-dada2-summary.qzv`)
