@@ -23,7 +23,7 @@ def load_data_artifact(filepath):
     :return: qiime2 object containing all information on sequence data
     """
     data_artifact = qiime2.Artifact.load(filepath)
-    logging.info('Loaded data artifact successfully: {}'.format(filepath))
+    logging.info('Loaded {}'.format(filepath))
     return data_artifact
 
 
@@ -48,7 +48,7 @@ def visualize_metadata(base_dir, metadata_object):
     # Prepare and save metadata visualization
     metadata_viz = metadata.visualizers.tabulate(metadata_object)
     metadata_viz.visualization.save(export_path)
-    logging.info('Saved metadata visualization successfully: {}'.format(export_path))
+    logging.info('Saved {}'.format(export_path))
 
     return metadata_viz
 
@@ -67,7 +67,7 @@ def visualize_demux(base_dir, data_artifact):
     # Prepare and save demux summary visualization
     demux_viz = demux.visualizers.summarize(data=data_artifact)
     demux_viz.visualization.save(export_path)
-    logging.info('Saved demux visualization successfully: {}'.format(export_path))
+    logging.info('Saved {}'.format(export_path))
 
     return demux_viz
 
@@ -140,9 +140,8 @@ def visualize_dada2(base_dir, dada2_filtered_table, dada2_filtered_rep_seqs, met
     # Save visualizations
     feature_table_summary.visualization.save(table_dada2_path)
     feature_table_seqs.visualization.save(rep_seqs_path)
-    logging.info('Saved DADA2 visualizations successfully.')
-    logging.info(table_dada2_path)
-    logging.info(rep_seqs_path)
+    logging.info('Saved {}'.format(table_dada2_path))
+    logging.info('Saved {}'.format(rep_seqs_path))
 
     return feature_table_summary
 
@@ -165,12 +164,12 @@ def seq_alignment_mask(base_dir, dada2_filtered_rep_seqs, cpu_count=None):
     # Perform and save sequence alignment
     seq_alignment = alignment.methods.mafft(sequences=dada2_filtered_rep_seqs, n_threads=cpu_count)
     seq_alignment.alignment.save(aligned_export_path)
-    logging.info('Saved {} successfully'.format(aligned_export_path))
+    logging.info('Saved {}'.format(aligned_export_path))
 
     # Perform and save alignment mask
     seq_mask = alignment.methods.mask(alignment=seq_alignment.alignment)
     seq_mask.masked_alignment.save(mask_export_path)
-    logging.info('Saved {} successfully'.format(mask_export_path))
+    logging.info('Saved {}'.format(mask_export_path))
 
     return seq_mask, seq_alignment
 
@@ -188,12 +187,12 @@ def phylo_tree(base_dir, seq_mask):
     # Run and save unrooted tree
     phylo_unrooted_tree = phylogeny.methods.fasttree(alignment=seq_mask.masked_alignment)
     phylo_unrooted_tree.tree.save(unrooted_export_path)
-    logging.info('Saved {} successfully'.format(unrooted_export_path))
+    logging.info('Saved {}'.format(unrooted_export_path))
 
     # Run and save rooted tree
     phylo_rooted_tree = phylogeny.methods.midpoint_root(tree=phylo_unrooted_tree.tree)
     phylo_rooted_tree.rooted_tree.save(rooted_export_path)
-    logging.info('Saved {} successfully'.format(rooted_export_path))
+    logging.info('Saved {}'.format(rooted_export_path))
 
     return phylo_unrooted_tree, phylo_rooted_tree
 
@@ -209,7 +208,7 @@ def export_newick(base_dir, tree):
 
     # Export data
     tree.rooted_tree.export_data(export_path)
-    logging.info('Exported tree file in newick format from the follwing artifact: {}'.format(tree))
+    logging.info('Exported tree: {}'.format(export_path))
     return export_path
 
 
@@ -220,7 +219,7 @@ def load_artifact(artifact_path):
     """
     # Load existing artifact
     artifact = qiime2.Artifact.load(artifact_path)
-    logging.info('Loaded artifact from {}'.format(artifact_path))
+    logging.info('Loaded {}'.format(artifact_path))
     return artifact
 
 
@@ -265,7 +264,7 @@ def alpha_rarefaction_visualization(base_dir, dada2_filtered_table, max_depth=No
 
     # Save
     alpha_rarefaction_viz.visualization.save(alpha_rarefaction_export_path)
-    logging.info('Saved {} successfully'.format(alpha_rarefaction_export_path))
+    logging.info('Saved {}'.format(alpha_rarefaction_export_path))
 
     return alpha_rarefaction_viz
 
@@ -293,7 +292,7 @@ def classify_taxonomy(base_dir, dada2_filtered_rep_seqs, classifier, cpu_count=N
                                                                     n_jobs=cpu_count)
     # Save the resulting artifact
     taxonomy_analysis.classification.save(export_path)
-    logging.info('Saved {} successfully'.format(export_path))
+    logging.info('Saved {}'.format(export_path))
 
     return taxonomy_analysis
 
@@ -318,14 +317,14 @@ def visualize_taxonomy(base_dir, metadata_object, taxonomy_analysis, dada2_filte
 
     # Save taxonomy visualization
     taxonomy_visualization.visualization.save(tax_export_path)
-    logging.info('Saved {} successfully'.format(tax_export_path))
+    logging.info('Saved {}'.format(tax_export_path))
 
     # Create and save barplot visualization
     taxonomy_barplot = taxa.visualizers.barplot(table=dada2_filtered_table,
                                                 taxonomy=taxonomy_analysis.classification,
                                                 metadata=metadata_object)
     taxonomy_barplot.visualization.save(barplot_export_path)
-    logging.info('Saved {} successfully'.format(barplot_export_path))
+    logging.info('Saved {}'.format(barplot_export_path))
 
     return taxonomy_metadata
 
@@ -363,16 +362,16 @@ def run_diversity_metrics(base_dir, dada2_filtered_table, phylo_rooted_tree, met
 
     # Save
     diversity_metrics.bray_curtis_emperor.save(bray_curtis_path)
-    logging.info('Saved {} successfully'.format(bray_curtis_path))
+    logging.info('Saved {}'.format(bray_curtis_path))
 
     diversity_metrics.jaccard_emperor.save(jaccard_emperor_path)
-    logging.info('Saved {} successfully'.format(jaccard_emperor_path))
+    logging.info('Saved {}'.format(jaccard_emperor_path))
 
     diversity_metrics.unweighted_unifrac_emperor.save(unweighted_unifrac_emperor_path)
-    logging.info('Saved {} successfully'.format(unweighted_unifrac_emperor_path))
+    logging.info('Saved {}'.format(unweighted_unifrac_emperor_path))
 
     diversity_metrics.weighted_unifrac_emperor.save(weighted_unifrac_emperor_path)
-    logging.info('Saved {} successfully'.format(weighted_unifrac_emperor_path))
+    logging.info('Saved {}'.format(weighted_unifrac_emperor_path))
 
     # Alpha group significance
     alpha_group_faith = diversity.visualizers.alpha_group_significance(
@@ -385,9 +384,9 @@ def run_diversity_metrics(base_dir, dada2_filtered_table, phylo_rooted_tree, met
 
     # Save
     alpha_group_faith.visualization.save(faith_visualization_path)
-    logging.info('Saved {} successfully'.format(faith_visualization_path))
+    logging.info('Saved {}'.format(faith_visualization_path))
     alpha_group_evenness.visualization.save(evenness_visualization_path)
-    logging.info('Saved {} successfully'.format(evenness_visualization_path))
+    logging.info('Saved {}'.format(evenness_visualization_path))
 
     # Beta group significance
     try:
