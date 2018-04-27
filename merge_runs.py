@@ -1,6 +1,6 @@
 import click
 from qiime2.plugins import feature_table
-from .qiime2_pipeline import *
+from bin.qiime2_pipeline import *
 
 """
 This script is meant to merge separate MiSeq runs into a single workable analysis. It also supports filtering the merged
@@ -13,7 +13,10 @@ We only want to look at the sprout samples across the two runs, so we can first 
 down with this script. The final analysis files will only contain the sprouts samples.
 """
 
-# TODO: Test this...
+logging.basicConfig(
+    format='\033[92m \033[1m %(asctime)s \033[0m %(message)s ',
+    level=logging.INFO,
+    datefmt='%Y-%m-%d %H:%M:%S')
 
 
 def merge_run_tables(table1_artifact_path, table2_artifact_path):
@@ -22,9 +25,10 @@ def merge_run_tables(table1_artifact_path, table2_artifact_path):
     :param table2_artifact_path:
     :return:
     """
+    logging.info('Merging {} and {}...'.format(table1_artifact_path, table2_artifact_path))
     table1 = load_data_artifact(table1_artifact_path)
     table2 = load_data_artifact(table2_artifact_path)
-    dada2_filtered_table = feature_table.actions.merge(table1=table1, table2=table2).merged_table
+    dada2_filtered_table = feature_table.actions.merge(tables=[table1, table2]).merged_table
     return dada2_filtered_table
 
 
@@ -34,9 +38,10 @@ def merge_run_repseqs(repseqs1_artifact_path, repseqs2_artifact_path):
     :param repseqs2_artifact_path:
     :return:
     """
+    logging.info('Merging {} and {}...'.format(repseqs1_artifact_path, repseqs2_artifact_path))
     repseqs1 = load_data_artifact(repseqs1_artifact_path)
     repseqs2 = load_data_artifact(repseqs2_artifact_path)
-    dada2_filtered_rep_seqs = feature_table.actions.merge_seq_data(repseqs1, repseqs2).merged_data
+    dada2_filtered_rep_seqs = feature_table.actions.merge_seqs(data=[repseqs1, repseqs2]).merged_data
     return dada2_filtered_rep_seqs
 
 
@@ -49,6 +54,7 @@ def filter_run_tables(sample_id_file, dada2_table):
     :param dada2_table: dada2 table artifact
     :return: filtered dada2 table artifact
     """
+    logging.info('Filtering table using {}...'.format(sample_id_file))
     samples = load_sample_metadata(sample_id_file)
     filtered_table = feature_table.actions.filter_samples(table=dada2_table, metadata=samples).filtered_table
     return filtered_table
@@ -61,6 +67,7 @@ def filter_run_repseqs(sample_id_file, dada2_rep_seqs):
     :param dada2_rep_seqs: representative sequences artifact
     :return: filtered representative sequences artifact
     """
+    logging.info('Filtering repseqs using {}...'.format(sample_id_file))
     samples = load_sample_metadata(sample_id_file)
     rep_seqs = feature_table.actions.filter_seqs(data=dada2_rep_seqs, metadata=samples, exclude_ids=True).filtered_data
     return rep_seqs
@@ -77,7 +84,8 @@ def filter_run_repseqs(sample_id_file, dada2_rep_seqs):
               help='Path to QIIME2 tab-separated metadata file')
 @click.option('-c', '--classifier_artifact_path',
               type=click.Path(exists=True),
-              required=True,
+              required=False,
+              default='./classifiers/99_V3V4_Silva_naive_bayes_classifier.qza',
               help='Path to QIIME2 Classifier Artifact')
 @click.option('-t1', '--table1_artifact_path',
               type=click.Path(exists=True),
@@ -104,23 +112,21 @@ def run_merge_pipeline(base_dir, sample_metadata_path, classifier_artifact_path,
                        table1_artifact_path, table2_artifact_path, repseqs1_artifact_path, repseqs2_artifact_path,
                        filtering_list):
     """
-    1. Load and merge dada2 results from two previous runs
-    2. Multiple sequence alignment and masking of highly variable regions
-    3. Generate a phylogenetic tree
-    4. Load an existing qiime2 classifier artifact
-    5. Generate alpha rarefaction curves
-    6. Conduct taxonomic analysis
-    7. Generate taxonomy barplots
-    8. Run diversity metrics
+    How this works:
 
-    :param base_dir:
-    :param sample_metadata_path:
-    :param classifier_artifact_path:
-    :param table1_artifact_path:
-    :param table2_artifact_path:
-    :param repseqs1_artifact_path:
-    :param repseqs2_artifact_path:
+    1. Loads and merges dada2 results from two previous analyses (requires rep-seqs-dada2 and table-dada2 for each run)
+
+    2. Runs the full pipeline as usual with the merged run
+
+    NOTE: A metadata file containing information for BOTH runs is required.
+
+    Optionally, you may also provide a 'filtering list' which is a text file containing a sample ID on each new line
+    which will only run the pipeline on those provided samples.
     """
+    # Make sure base_dir exists
+    if not os.path.isdir(base_dir):
+        os.makedirs(base_dir)
+
     # Load metadata
     metadata_object = load_sample_metadata(sample_metadata_path)
 
@@ -137,10 +143,10 @@ def run_merge_pipeline(base_dir, sample_metadata_path, classifier_artifact_path,
 
     # Continue pipeline as normal
     # Visualize dada2
-    feature_table_summary = visualize_dada2(base_dir=base_dir,
-                                            dada2_filtered_table=dada2_merged_table,
-                                            dada2_filtered_rep_seqs=dada2_merged_rep_seqs,
-                                            metadata_object=metadata_object)
+    visualize_dada2(base_dir=base_dir,
+                    dada2_filtered_table=dada2_merged_table,
+                    dada2_filtered_rep_seqs=dada2_merged_rep_seqs,
+                    metadata_object=metadata_object)
 
     # Mask and alignment
     (seq_mask, seq_alignment) = seq_alignment_mask(base_dir=base_dir,
@@ -156,8 +162,8 @@ def run_merge_pipeline(base_dir, sample_metadata_path, classifier_artifact_path,
     classifier = load_classifier_artifact(classifier_artifact_path=classifier_artifact_path)
 
     # Produce rarefaction visualization
-    alpha_rarefaction_viz = alpha_rarefaction_visualization(base_dir=base_dir,
-                                                            dada2_filtered_table=dada2_merged_table)
+    alpha_rarefaction_visualization(base_dir=base_dir,
+                                    dada2_filtered_table=dada2_merged_table)
 
     # Run taxonomic analysis
     taxonomy_analysis = classify_taxonomy(base_dir=base_dir,
@@ -165,16 +171,16 @@ def run_merge_pipeline(base_dir, sample_metadata_path, classifier_artifact_path,
                                           classifier=classifier)
 
     # Visualize taxonomy
-    taxonomy_metadata = visualize_taxonomy(base_dir=base_dir,
-                                           metadata_object=metadata_object,
-                                           taxonomy_analysis=taxonomy_analysis,
-                                           dada2_filtered_table=dada2_merged_table)
+    visualize_taxonomy(base_dir=base_dir,
+                       metadata_object=metadata_object,
+                       taxonomy_analysis=taxonomy_analysis,
+                       dada2_filtered_table=dada2_merged_table)
 
     # Alpha and beta diversity
-    diversity_metrics = run_diversity_metrics(base_dir=base_dir,
-                                              dada2_filtered_table=dada2_merged_table,
-                                              phylo_rooted_tree=phylo_rooted_tree,
-                                              metadata_object=metadata_object)
+    run_diversity_metrics(base_dir=base_dir,
+                          dada2_filtered_table=dada2_merged_table,
+                          phylo_rooted_tree=phylo_rooted_tree,
+                          metadata_object=metadata_object)
 
 
 if __name__ == '__main__':
