@@ -155,7 +155,7 @@ def seq_alignment_mask(base_dir, dada2_filtered_rep_seqs, cpu_count=None):
     :param cpu_count: number of CPUs to use for analysis
     :return: qiime2 sequence mask and sequence alignment objects
     """
-    logging.info('Running alignment mask...')
+
 
     # Threading setup
     if cpu_count is None:
@@ -166,11 +166,13 @@ def seq_alignment_mask(base_dir, dada2_filtered_rep_seqs, cpu_count=None):
     mask_export_path = os.path.join(base_dir, 'masked-aligned-rep-seqs.qza')
 
     # Perform and save sequence alignment
+    logging.info('Running sequence alignment...')
     seq_alignment = alignment.methods.mafft(sequences=dada2_filtered_rep_seqs, n_threads=cpu_count)
     seq_alignment.alignment.save(aligned_export_path)
     logging.info('Saved {}'.format(aligned_export_path))
 
     # Perform and save alignment mask
+    logging.info('Running alignment mask...')
     seq_mask = alignment.methods.mask(alignment=seq_alignment.alignment)
     seq_mask.masked_alignment.save(mask_export_path)
     logging.info('Saved {}'.format(mask_export_path))
@@ -184,18 +186,18 @@ def phylo_tree(base_dir, seq_mask):
     :param seq_mask: 
     :return: qiime2 unrooted and rooted tree objects
     """
-    logging.info('Generating trees...')
-
     # Path setup
     unrooted_export_path = os.path.join(base_dir, 'unrooted-tree.qza')
     rooted_export_path = os.path.join(base_dir, 'rooted-tree.qza')
 
     # Run and save unrooted tree
+    logging.info('Generating unrooted tree...')
     phylo_unrooted_tree = phylogeny.methods.fasttree(alignment=seq_mask.masked_alignment)
     phylo_unrooted_tree.tree.save(unrooted_export_path)
     logging.info('Saved {}'.format(unrooted_export_path))
 
     # Run and save rooted tree
+    logging.info('Generating rooted tree...')
     phylo_rooted_tree = phylogeny.methods.midpoint_root(tree=phylo_unrooted_tree.tree)
     phylo_rooted_tree.rooted_tree.save(rooted_export_path)
     logging.info('Saved {}'.format(rooted_export_path))
@@ -488,7 +490,7 @@ def write_new_metadata(df, sample_metadata_path):
     return new_metadata_path
 
 
-def validate_metadata(base_dir, sample_metadata_path):
+def validate_metadata(sample_metadata_path):
     logging.info('Validating metadata file: {}'.format(sample_metadata_path))
     df = read_metadata_df(sample_metadata_path)
     df['#SampleID'] = df['#SampleID'].apply(validate_sample_id)  # Assumption that first column is the SampleID column
@@ -523,7 +525,7 @@ def run_pipeline(base_dir, data_artifact_path, sample_metadata_path, classifier_
     data_artifact = load_data_artifact(data_artifact_path)
 
     # Validate and correct metadata (currently only adds _00 if the SampleID doesn't end with it already)
-    new_metadata_path = validate_metadata(base_dir, sample_metadata_path)
+    new_metadata_path = validate_metadata(sample_metadata_path)
 
     # Load metadata
     metadata_object = load_sample_metadata(new_metadata_path)
