@@ -159,7 +159,7 @@ def run_merge_pipeline(base_dir, sample_metadata_path, classifier_artifact_path,
     export_newick(base_dir=base_dir, tree=phylo_rooted_tree)
 
     # Load classifier
-    classifier = load_classifier_artifact(classifier_artifact_path=classifier_artifact_path)
+    classifier = load_artifact(artifact_path=classifier_artifact_path)
 
     # Produce rarefaction visualization
     alpha_rarefaction_visualization(base_dir=base_dir,

@@ -213,15 +213,15 @@ def export_newick(base_dir, tree):
     return export_path
 
 
-def load_classifier_artifact(classifier_artifact_path):
+def load_artifact(artifact_path):
     """
-    :param classifier_artifact_path: 
+    :param artifact_path:
     :return: qiime2 classifier object
     """
     # Load existing artifact
-    classifier = qiime2.Artifact.load(classifier_artifact_path)
-    logging.info('Loaded classifier from {}'.format(classifier_artifact_path))
-    return classifier
+    artifact = qiime2.Artifact.load(artifact_path)
+    logging.info('Loaded artifact from {}'.format(artifact_path))
+    return artifact
 
 
 def calculate_maximum_depth(dada2_table):
@@ -544,7 +544,7 @@ def run_pipeline(base_dir, data_artifact_path, sample_metadata_path, classifier_
         export_newick(base_dir=base_dir, tree=phylo_rooted_tree)
 
         # Load classifier
-        classifier = load_classifier_artifact(classifier_artifact_path=classifier_artifact_path)
+        classifier = load_artifact(artifact_path=classifier_artifact_path)
 
         # Produce rarefaction visualization
         alpha_rarefaction_visualization(base_dir=base_dir, dada2_filtered_table=dada2_filtered_table)
