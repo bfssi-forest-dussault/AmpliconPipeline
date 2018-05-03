@@ -27,9 +27,9 @@ logging.basicConfig(
 
 def merge_run_tables(table1_artifact_path, table2_artifact_path):
     """
-    :param table1_artifact_path:
-    :param table2_artifact_path:
-    :return:
+    :param table1_artifact_path: str path to DADA2 table .qza file (first run)
+    :param table2_artifact_path: str path to DADA2 table .qza file (second run)
+    :return: Merged QIIME2 DADA2 table object
     """
     logging.info('Merging {} and {}...'.format(table1_artifact_path, table2_artifact_path))
     table1 = load_data_artifact(table1_artifact_path)
@@ -40,9 +40,9 @@ def merge_run_tables(table1_artifact_path, table2_artifact_path):
 
 def merge_run_repseqs(repseqs1_artifact_path, repseqs2_artifact_path):
     """
-    :param repseqs1_artifact_path:
-    :param repseqs2_artifact_path:
-    :return:
+    :param repseqs1_artifact_path: str path to representative sequences .qza file (first run)
+    :param repseqs2_artifact_path: str path to representative sequences .qza file (second run)
+    :return: Merged QIIME2 representative sequences object
     """
     logging.info('Merging {} and {}...'.format(repseqs1_artifact_path, repseqs2_artifact_path))
     repseqs1 = load_data_artifact(repseqs1_artifact_path)
@@ -51,14 +51,15 @@ def merge_run_repseqs(repseqs1_artifact_path, repseqs2_artifact_path):
     return dada2_filtered_rep_seqs
 
 
-# TODO: https://docs.qiime2.org/2017.12/plugins/available/feature-table/filter-samples/
 def filter_run_tables(sample_id_file, dada2_table):
     """
     This takes a list of sample IDs (must be present in your metadata for the merged runs) and then filters the
-    dada2 table down to only the requested samples
-    :param sample_id_file: path to text file containing selected IDs
-    :param dada2_table: dada2 table artifact
-    :return: filtered dada2 table artifact
+    DADA2 table down to only the requested samples. The sample_id_file should be a .tsv file with one column with the
+    header '#SampleID' and Seq IDs for each row.
+
+    :param sample_id_file: path to .tsv file containing desired IDs
+    :param dada2_table: DADA2 table object
+    :return: Filtered DADA2 table object
     """
     logging.info('Filtering table using {}...'.format(sample_id_file))
     samples = load_sample_metadata(sample_id_file)
@@ -68,10 +69,11 @@ def filter_run_tables(sample_id_file, dada2_table):
 
 def filter_run_repseqs(sample_id_file, dada2_rep_seqs):
     """
-    Same as filter_run_tables, except operates with the rep_seqs artifact
-    :param sample_id_file: path to text file containing selected IDs
-    :param dada2_rep_seqs: representative sequences artifact
-    :return: filtered representative sequences artifact
+    Same as filter_run_tables, except operates with the rep_seqs object
+
+    :param sample_id_file: path to .tsv file containing desired IDs
+    :param dada2_rep_seqs: DADA2 representative sequences object
+    :return: Filtered representative sequences object
     """
     logging.info('Filtering repseqs using {}...'.format(sample_id_file))
     samples = load_sample_metadata(sample_id_file)
@@ -125,10 +127,10 @@ def run_merge_pipeline(base_dir, sample_metadata_path, classifier_artifact_path,
 
     2. Runs the full pipeline as usual with the merged run
 
-    NOTE: A metadata file containing information for BOTH runs is required.
+    NOTE: A metadata .tsv file containing information for BOTH runs is required.
 
     Optionally, you may also provide a 'filtering list' which is a text file containing a sample ID on each new line
-    which will only run the pipeline on those provided samples.
+    which will only run the pipeline on the provided samples.
     """
     # Make sure base_dir exists
     if not os.path.isdir(base_dir):
