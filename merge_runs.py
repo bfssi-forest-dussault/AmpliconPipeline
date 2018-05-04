@@ -14,7 +14,7 @@ We have two runs containing multiple sample types (veal, beef, sprouts).
 We only want to look at the sprout samples across the two runs, so we can first merge them, and then filter them
 down with this script. The final analysis files will only contain the sprouts samples.
 
-#TODO: Allow for an unlimited number of tables/repseqs artifacts to be passed in and merged. This would be much more
+TODO: Allow for an unlimited number of tables/repseqs artifacts to be passed in and merged. This would be much more
 useful than the mandatory 2 right now. Unfortunately Click does not easily support the equivalent of nargs='*' so I'm 
 putting off doing this for now.
 """
