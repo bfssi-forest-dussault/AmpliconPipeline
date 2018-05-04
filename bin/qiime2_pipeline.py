@@ -33,6 +33,7 @@ def load_sample_metadata(filepath):
     :return: QIIME2 metadata object
     """
     metadata_object = qiime2.Metadata.load(filepath)
+    logging.info('Loaded {}'.format(filepath))
     return metadata_object
 
 
@@ -83,7 +84,7 @@ def dada2_qc(base_dir, demultiplexed_seqs, trim_left_f, trim_left_r, trunc_len_f
     :param trunc_len_r: Number of bases for reverse read truncation
     :param max_ee: number of errors allowed before rejecting a read
     :param chimera_method: Method for chimera detection
-    :param cpu_count: Number of CPUs to use for DADA@
+    :param cpu_count: Number of CPUs to use for DADA2
     :return: QIIME2/DADA2 filtered table and representative sequences objects
     """
     logging.info('Running DADA2 (this could take awhile)...')
@@ -101,13 +102,8 @@ def dada2_qc(base_dir, demultiplexed_seqs, trim_left_f, trim_left_r, trunc_len_f
 
     # Run dada2
     (dada2_filtered_table, dada2_filtered_rep_seqs) = dada2.methods.denoise_paired(
-        demultiplexed_seqs=demultiplexed_seqs,
-        trim_left_f=trim_left_f,
-        trim_left_r=trim_left_r,
-        trunc_len_f=trunc_len_f,
-        trunc_len_r=trunc_len_r,
-        max_ee=max_ee,
-        chimera_method=chimera_method,
+        demultiplexed_seqs=demultiplexed_seqs, trim_left_f=trim_left_f, trim_left_r=trim_left_r,
+        trunc_len_f=trunc_len_f, trunc_len_r=trunc_len_r, max_ee=max_ee, chimera_method=chimera_method,
         n_threads=cpu_count)
 
     # Save artifacts
@@ -339,8 +335,7 @@ def visualize_taxonomy(base_dir, metadata_object, taxonomy_analysis, dada2_filte
     logging.info('Saved {}'.format(tax_export_path))
 
     # Create and save barplot visualization
-    taxonomy_barplot = taxa.visualizers.barplot(table=dada2_filtered_table,
-                                                taxonomy=taxonomy_analysis.classification,
+    taxonomy_barplot = taxa.visualizers.barplot(table=dada2_filtered_table, taxonomy=taxonomy_analysis.classification,
                                                 metadata=metadata_object)
     taxonomy_barplot.visualization.save(barplot_export_path)
     logging.info('Saved {}'.format(barplot_export_path))
@@ -348,14 +343,18 @@ def visualize_taxonomy(base_dir, metadata_object, taxonomy_analysis, dada2_filte
     return taxonomy_metadata
 
 
-def run_diversity_metrics(base_dir, dada2_filtered_table, phylo_rooted_tree, metadata_object, sampling_depth=None):
+def run_diversity_metrics(base_dir, dada2_filtered_table, phylo_rooted_tree, metadata_object,
+                          sampling_depth=None, beta_column='sample_subsubtype'):
     """
+    TODO: Allow beta_column (for beta diversity calculation) to be set through CLI
+
     :param base_dir: Main working directory filepath
     :param dada2_filtered_table: 
     :param phylo_rooted_tree: 
     :param metadata_object: 
-    :param sampling_depth: 
-    :return: qiime2 diversity core metrics object
+    :param sampling_depth:
+    :param beta_column: Column name to use for the beta group significance step of the pipeline
+    :return: QIIME2 diversity core metrics object
     """
     logging.info('Running diversity metrics...')
 
@@ -411,11 +410,11 @@ def run_diversity_metrics(base_dir, dada2_filtered_table, phylo_rooted_tree, met
     try:
         beta_group = diversity.visualizers.beta_group_significance(
             distance_matrix=diversity_metrics.unweighted_unifrac_distance_matrix,
-            metadata=metadata_object.get_column('sample sub-sub-type'),
+            metadata=metadata_object.get_column(beta_column),
             pairwise=True)
         beta_group.visualization.save(beta_visualization_path)
     except:
-        logging.info('Could not calculate beta group significance with metadata feature Sample_Type\n')
+        logging.info('Could not calculate beta group significance with metadata feature {}\n'.format(beta_column))
 
     return diversity_metrics
 
@@ -446,13 +445,10 @@ def train_feature_classifier(base_dir, otu_filepath, reference_taxonomy_filepath
 
     otus = qiime2.Artifact.load(otu_filepath)
     ref_taxonomy = qiime2.Artifact.load(reference_taxonomy_filepath)
-    reference_seqs = feature_classifier.methods.extract_reads(sequences=otus,
-                                                              f_primer=f_primer,
-                                                              r_primer=r_primer)
+    reference_seqs = feature_classifier.methods.extract_reads(sequences=otus, f_primer=f_primer, r_primer=r_primer)
     reference_seqs.reads.save(ref_seqs_filepath)
     naive_bayes_classifier = feature_classifier.methods.fit_classifier_naive_bayes(reference_reads=reference_seqs.reads,
                                                                                    reference_taxonomy=ref_taxonomy)
-
     return naive_bayes_classifier
 
 
