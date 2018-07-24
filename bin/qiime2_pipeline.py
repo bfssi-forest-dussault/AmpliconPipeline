@@ -419,39 +419,6 @@ def run_diversity_metrics(base_dir, dada2_filtered_table, phylo_rooted_tree, met
     return diversity_metrics
 
 
-# TODO: Implement this function to allow for training using custom primer sets/reference taxonomies
-def train_feature_classifier(base_dir, otu_filepath, reference_taxonomy_filepath, f_primer=None, r_primer=None):
-    """
-    Trains a Naive Bayes classifier based on a reference database/taxonomy
-
-    Primers for V3-V4 region:
-    F: S-D-Bact-0341-b-S-17, 5′-CCTACGGGNGGCWGCAG-3′,
-    R: S-D-Bact-0785-a-A-21, 5′-GACTACHVGGGTATCTAATCC-3
-    https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3592464/
-
-    :param base_dir: Main working directory filepath
-    :param otu_filepath: File path to reference OTU .qza file
-    :param reference_taxonomy_filepath: File path to reference taxonomy .qza file
-    :param f_primer: String containing forward primer sequence. Default V3-V4 regions.
-    :param r_primer: String containing reverse primer sequence Default V3-V4 regions.
-    :return: Returns the trained feature classifier
-    """
-    if f_primer is None and r_primer is None:
-        f_primer = 'CCTACGGGNGGCWGCAG'  # V3-V4
-        r_primer = 'GACTACHVGGGTATCTAATCC'  # V3-V4
-
-    # Path setup
-    ref_seqs_filepath = os.path.join(base_dir, 'ref-seqs.qza')
-
-    otus = qiime2.Artifact.load(otu_filepath)
-    ref_taxonomy = qiime2.Artifact.load(reference_taxonomy_filepath)
-    reference_seqs = feature_classifier.methods.extract_reads(sequences=otus, f_primer=f_primer, r_primer=r_primer)
-    reference_seqs.reads.save(ref_seqs_filepath)
-    naive_bayes_classifier = feature_classifier.methods.fit_classifier_naive_bayes(reference_reads=reference_seqs.reads,
-                                                                                   reference_taxonomy=ref_taxonomy)
-    return naive_bayes_classifier
-
-
 def run_qc_pipeline(base_dir, data_artifact_path, sample_metadata_path):
     """
     1. Loads qiime2 data artifact and sample metadata file
