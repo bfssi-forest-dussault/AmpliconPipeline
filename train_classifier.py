@@ -1,16 +1,20 @@
-import logging
-import click
-import os
+"""
+This is a standalone script that facilitates training a new classifier to manually feed into ampliconpipeline.py.
+"""
 
+import os
+import click
 import qiime2
+import logging
 
 from pathlib import Path
-from bin import helper_functions
-from bin import qiime2_pipeline
+from qiime2.plugins import feature_classifier
 from bin.helper_functions import execute_command_simple
 
-from qiime2 import Metadata
-from qiime2.plugins import feature_classifier
+logging.basicConfig(
+    format='\033[92m \033[1m %(asctime)s \033[0m %(message)s ',
+    level=logging.DEBUG,
+    datefmt='%Y-%m-%d %H:%M:%S')
 
 
 @click.command()
@@ -59,16 +63,19 @@ def cli(ctx, inputfasta, taxonomytext, outdir, forward_primer, reverse_primer):
 
 
 def output_otu_qza(outdir: Path, inputfasta: Path) -> Path:
+    logging.debug("Preparing .qza OTUs artifact from {}".format(inputfasta))
     outfile = outdir / inputfasta.with_suffix(".qza").name
     cmd = "qiime tools import " \
           "--type 'FeatureData[Sequence]' " \
           "--input-path {inputfasta} " \
           "--output-path {outfile}".format(inputfasta=inputfasta, outfile=outfile)
     execute_command_simple(cmd)
+    logging.debug("Created {}".format(outfile))
     return outfile
 
 
 def output_ref_taxonomy_qza(outdir: Path, inputtxt: Path):
+    logging.debug("Preparing .qza taxonomy artifact from {}".format(inputtxt))
     outfile = outdir / inputtxt.with_suffix(".qza").name
     cmd = "qiime tools import " \
           "--type 'FeatureData[Taxonomy]' " \
@@ -76,16 +83,21 @@ def output_ref_taxonomy_qza(outdir: Path, inputtxt: Path):
           "--input-path {inputtxt} " \
           "--output-path {outfile}".format(inputtxt=inputtxt, outfile=outfile)
     execute_command_simple(cmd)
+    logging.debug("Created {}".format(outfile))
     return outfile
 
 
 def extract_reads(otu_qza: Path, f_primer: str, r_primer: str, outdir: Path) -> tuple:
+    logging.debug("Extracting reads from {} with specified primers".format(otu_qza))
+    logging.debug("F: {}".format(f_primer))
+    logging.debug("R: {}".format(r_primer))
     outfile = outdir / 'ref-seqs.qza'
     otus = qiime2.Artifact.load(otu_qza)
     reference_seqs = feature_classifier.methods.extract_reads(sequences=otus,
                                                               f_primer=f_primer,
                                                               r_primer=r_primer)
     reference_seqs.reads.save(outfile)
+    logging.debug("Created {}".format(outfile))
     return reference_seqs, outfile
 
 
@@ -101,15 +113,8 @@ def train_feature_classifier(reference_seqs, reference_taxonomy_filepath):
     Primers for Schloss MiSeq protocol (V4):
     F: TATGGTAATTGTGTGCCAGCMGCCGCGGTAA
     R: AGTCAGTCAGCCGGACTACHVGGGTWTCTAAT
-
-    :param base_dir: Main working directory filepath
-    :param otu_filepath: File path to reference OTU .qza file
-    :param reference_taxonomy_filepath: File path to reference taxonomy .qza file
-    :param f_primer: String containing forward primer sequence
-    :param r_primer: String containing reverse primer sequence
-    :return: Returns the trained feature classifier
     """
-
+    logging.debug("Training feature classifier with naive bayes")
     ref_taxonomy = qiime2.Artifact.load(reference_taxonomy_filepath)
     naive_bayes_classifier = feature_classifier.methods.fit_classifier_naive_bayes(reference_reads=reference_seqs.reads,
                                                                                    reference_taxonomy=ref_taxonomy)
