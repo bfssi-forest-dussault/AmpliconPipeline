@@ -120,6 +120,7 @@ def train_feature_classifier(reference_seqs, reference_taxonomy_filepath, outdir
     naive_bayes_classifier = feature_classifier.methods.fit_classifier_naive_bayes(reference_reads=reference_seqs.reads,
                                                                                    reference_taxonomy=ref_taxonomy)
     naive_bayes_classifier.save(outfile)
+    logging.debug("Created {}".format(outfile))
     return naive_bayes_classifier
 
 
