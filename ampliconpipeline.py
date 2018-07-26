@@ -7,6 +7,10 @@ import os
 from bin import helper_functions
 from bin import qiime2_pipeline
 
+# TODO: Move over to pathlib
+# TODO: Use f-strings (from __future__)
+# NOTE: Must set environment variable $TMPDIR to an existing folder with sufficient free space or you'll get an OSError
+
 
 @click.command()
 @click.option('-i', '--inputdir',
@@ -40,17 +44,17 @@ from bin import qiime2_pipeline
                    'This is important to do before running the pipeline to establish acceptable trimming/truncation '
                    'parameters to pass to dada2.')
 @click.option('-tf', '--trim_left_f',
-              default=10,
-              help='Trim n bases from the 5\' end of the forward reads. Defaults to 10.')
+              default=0,
+              help='Trim n bases from the 5\' end of the forward reads. Defaults to 0.')
 @click.option('-tr', '--trim_left_r',
-              default=5,
-              help='Trim n bases from the 5\' end of the reverse reads. Defaults to 5.')
+              default=0,
+              help='Trim n bases from the 5\' end of the reverse reads. Defaults to 0.')
 @click.option('-trf', '--trunc_len_f',
-              default=280,
-              help='Truncate the forward reads to n bases. Defaults to 280.')
+              default=300,
+              help='Truncate the forward reads to n bases. Defaults to 300.')
 @click.option('-trr', '--trunc_len_r',
-              default=280,
-              help='Truncate the reverse reads to n bases. Defaults to 280.')
+              default=300,
+              help='Truncate the reverse reads to n bases. Defaults to 300.')
 @click.option('-v', '--verbose',
               is_flag=True,
               default=False,
