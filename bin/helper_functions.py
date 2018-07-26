@@ -102,22 +102,6 @@ def get_sample_dictionary(directory: str) -> dict:
     return sample_dictionary
 
 
-def valid_olc_id(filename: str):
-    """
-    Validate that a fastq.gz file contains a valid OLC sample ID
-    :param filename: Path to file
-    :return: boolean of valid status
-    """
-    sample_id = os.path.basename(filename)[:13]
-    id_components = sample_id.split('-')
-    valid_status = False
-    if id_components[0].isdigit() and id_components[1] == 'SEQ' and id_components[2].isdigit():
-        valid_status = True
-    else:
-        logging.warning('WARNING: ID for {} is not a valid OLC ID'.format(sample_id))
-    return valid_status
-
-
 def append_dummy_barcodes(path: str):
     """
     Function to append a dummy barcode ('_00') to all .fastq.gz MiSeq read files for compatibility with QIIME 2
@@ -125,8 +109,6 @@ def append_dummy_barcodes(path: str):
     :param path: Path to .fastq.gz file
     """
     for file in retrieve_fastqgz(path):
-        # if valid_olc_id(file):
-            # TODO: Make this renaming more robust with some regex
         os.rename(os.path.abspath(file), os.path.abspath(file).replace('_S', '_00_S'))
     logging.info('Added dummy barcodes to all valid OLC *.fastq.gz files in {}'.format(path))
 
