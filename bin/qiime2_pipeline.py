@@ -73,7 +73,7 @@ def visualize_demux(base_dir, data_artifact):
     return demux_viz
 
 
-def dada2_qc(base_dir, demultiplexed_seqs, trim_left_f, trim_left_r, trunc_len_f, trunc_len_r, max_ee=3,
+def dada2_qc(base_dir, demultiplexed_seqs, trim_left_f, trim_left_r, trunc_len_f, trunc_len_r, max_ee=2,
              chimera_method='consensus', cpu_count=None):
     """
     :param base_dir: Main working directory filepath
@@ -91,7 +91,7 @@ def dada2_qc(base_dir, demultiplexed_seqs, trim_left_f, trim_left_r, trunc_len_f
 
     # Grab all CPUs if parameter is not specified
     if cpu_count is None:
-        cpu_count = multiprocessing.cpu_count()
+        cpu_count = multiprocessing.cpu_count() - 1
         logging.info('Set CPU count to {}'.format(cpu_count))
 
     logging.info('DADA2 trimming/truncation parameters:')
@@ -101,7 +101,7 @@ def dada2_qc(base_dir, demultiplexed_seqs, trim_left_f, trim_left_r, trunc_len_f
     logging.info('trunc_len_r: {}'.format(trunc_len_r))
 
     # Run dada2
-    (dada2_filtered_table, dada2_filtered_rep_seqs) = dada2.methods.denoise_paired(
+    dada2_filtered_table, dada2_filtered_rep_seqs, denoising_stats = dada2.methods.denoise_paired(
         demultiplexed_seqs=demultiplexed_seqs, trim_left_f=trim_left_f, trim_left_r=trim_left_r,
         trunc_len_f=trunc_len_f, trunc_len_r=trunc_len_r, max_ee=max_ee, chimera_method=chimera_method,
         n_threads=cpu_count)
@@ -109,6 +109,10 @@ def dada2_qc(base_dir, demultiplexed_seqs, trim_left_f, trim_left_r, trunc_len_f
     # Save artifacts
     dada2_filtered_table.save(os.path.join(base_dir, 'table-dada2.qza'))
     dada2_filtered_rep_seqs.save(os.path.join(base_dir, 'rep-seqs-dada2.qza'))
+    try:
+        denoising_stats.save(os.path.join(base_dir, 'dada2-denoising-stats.qza'))
+    except:
+        logging.info("Couldn't save DADA2 denoising stats")
     logging.info('Completed running DADA2')
 
     return dada2_filtered_table, dada2_filtered_rep_seqs
@@ -207,7 +211,7 @@ def export_newick(base_dir, tree):
     :return: Path to tree file in newick format exported from the tree object
     """
     # Path setup
-    export_path = os.path.join(base_dir, 'newick.tree')
+    export_path = os.path.join(base_dir, 'tree')
 
     # Export data
     tree.rooted_tree.export_data(export_path)
@@ -344,7 +348,7 @@ def visualize_taxonomy(base_dir, metadata_object, taxonomy_analysis, dada2_filte
 
 
 def run_diversity_metrics(base_dir, dada2_filtered_table, phylo_rooted_tree, metadata_object,
-                          sampling_depth=None, beta_column='sample_subsubtype'):
+                          sampling_depth=None, beta_column='sample_annotation'):
     """
     TODO: Allow beta_column (for beta diversity calculation) to be set through CLI
 
@@ -392,19 +396,23 @@ def run_diversity_metrics(base_dir, dada2_filtered_table, phylo_rooted_tree, met
     logging.info('Saved {}'.format(weighted_unifrac_emperor_path))
 
     # Alpha group significance
-    alpha_group_faith = diversity.visualizers.alpha_group_significance(
-        alpha_diversity=diversity_metrics.faith_pd_vector,
-        metadata=metadata_object)
+    try:
+        alpha_group_faith = diversity.visualizers.alpha_group_significance(
+            alpha_diversity=diversity_metrics.faith_pd_vector,
+            metadata=metadata_object)
 
-    alpha_group_evenness = diversity.visualizers.alpha_group_significance(
-        alpha_diversity=diversity_metrics.evenness_vector,
-        metadata=metadata_object)
+        alpha_group_evenness = diversity.visualizers.alpha_group_significance(
+            alpha_diversity=diversity_metrics.evenness_vector,
+            metadata=metadata_object)
 
-    # Save
-    alpha_group_faith.visualization.save(faith_visualization_path)
-    logging.info('Saved {}'.format(faith_visualization_path))
-    alpha_group_evenness.visualization.save(evenness_visualization_path)
-    logging.info('Saved {}'.format(evenness_visualization_path))
+        # Save
+        alpha_group_faith.visualization.save(faith_visualization_path)
+        logging.info('Saved {}'.format(faith_visualization_path))
+        alpha_group_evenness.visualization.save(evenness_visualization_path)
+        logging.info('Saved {}'.format(evenness_visualization_path))
+    except ValueError as e:
+        logging.info("Could not calculate alpha group significance")
+        logging.info(e)
 
     # Beta group significance
     try:
@@ -413,9 +421,9 @@ def run_diversity_metrics(base_dir, dada2_filtered_table, phylo_rooted_tree, met
             metadata=metadata_object.get_column(beta_column),
             pairwise=True)
         beta_group.visualization.save(beta_visualization_path)
-    except:
+    except ValueError as e:
         logging.info('Could not calculate beta group significance with metadata feature {}\n'.format(beta_column))
-
+        logging.info(e)
     return diversity_metrics
 
 
@@ -454,8 +462,8 @@ def validate_sample_id(sample_id):
     Accomodates the QIIME2 import functionality via qiime tools import (CasavaOneEightSingleLanePerSampleDirFmt)
     Automatically corrects the IDs if necessary.
 
-    :param sample_id: OLC Sample ID
-    :return: Validated/corrected OLC Sample ID
+    :param sample_id: Sample ID
+    :return: Validated/corrected Sample ID
     """
     if not sample_id.endswith('_00'):
         sample_id += '_00'
@@ -529,14 +537,13 @@ def run_pipeline(base_dir, data_artifact_path, sample_metadata_path, classifier_
     visualize_demux(base_dir=base_dir, data_artifact=data_artifact)
 
     # Filter & denoise w/dada2
-    (dada2_filtered_table, dada2_filtered_rep_seqs) = dada2_qc(base_dir=base_dir, demultiplexed_seqs=data_artifact,
-                                                               trim_left_f=trim_left_f, trim_left_r=trim_left_r,
-                                                               trunc_len_f=trunc_len_f, trunc_len_r=trunc_len_r)
+    dada2_filtered_table, dada2_filtered_rep_seqs = dada2_qc(base_dir=base_dir, demultiplexed_seqs=data_artifact,
+                                                             trim_left_f=trim_left_f, trim_left_r=trim_left_r,
+                                                             trunc_len_f=trunc_len_f, trunc_len_r=trunc_len_r)
     # Visualize dada2
     visualize_dada2(base_dir=base_dir, dada2_filtered_table=dada2_filtered_table,
                     dada2_filtered_rep_seqs=dada2_filtered_rep_seqs, metadata_object=metadata_object)
 
-    # Only do these steps if the filtering_flag is false
     if filtering_flag is False:
         # Mask and alignment
         (seq_mask, seq_alignment) = seq_alignment_mask(base_dir=base_dir,
@@ -563,6 +570,6 @@ def run_pipeline(base_dir, data_artifact_path, sample_metadata_path, classifier_
                            taxonomy_analysis=taxonomy_analysis, dada2_filtered_table=dada2_filtered_table)
 
         # Alpha and beta diversity
-        # TODO: requires metadata object with some sort of sample information (sample type)
+        # TODO: requires metadata object with some sort of sample information (e.g. sample type)
         run_diversity_metrics(base_dir=base_dir, dada2_filtered_table=dada2_filtered_table,
                               phylo_rooted_tree=phylo_rooted_tree, metadata_object=metadata_object)
