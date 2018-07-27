@@ -421,7 +421,7 @@ def run_diversity_metrics(base_dir, dada2_filtered_table, phylo_rooted_tree, met
             metadata=metadata_object.get_column(beta_column),
             pairwise=True)
         beta_group.visualization.save(beta_visualization_path)
-    except ValueError as e:
+    except (ValueError, TypeError) as e:
         logging.info('Could not calculate beta group significance with metadata feature {}\n'.format(beta_column))
         logging.info(e)
     return diversity_metrics
